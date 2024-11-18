@@ -119,8 +119,8 @@ class UserController extends Controller
                 200);
         } else {
             return response()->json(['message' => 'User not updated',
-                'code' => 500], 
-                500);
+                'code' => 414], 
+                414);
         }
 
 
