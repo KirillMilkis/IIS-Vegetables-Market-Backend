@@ -170,17 +170,17 @@ class CategoryController extends Controller
             }
 
             if($parent->isFinal == 'true'){
-                $parent->update([ 'isFinal' => false ]);
-                $category->setAttribute('isFinal', true);
+                $parent->update([ 'is_final' => false ]);
+                $category->setAttribute('is_final', true);
             } else{
-                $category->setAttribute('isFinal', false);
+                $category->setAttribute('is_final', false);
             }
             
         } else {
 
             $category = Category::create($input);
             $category->setAttribute('status', 'PROCESS');
-            $category->setAttribute('isFinal', false);
+            $category->setAttribute('is_final', false);
 
             if(!$category){
                 return response()->json(['message' => 'Category not created',
@@ -199,6 +199,8 @@ class CategoryController extends Controller
             default:
                 return response()->json(['message' => 'Cannot create category with your role'], 403);
         }
+
+        $category->save(); 
 
         
         if ($request->has('attributes') && is_array($request->attributes)) {
@@ -231,6 +233,12 @@ class CategoryController extends Controller
     public function update(Request $request)
     {
         $category = Category::find($request->id);
+        // $user_initator = Auth::user();
+
+        // if($user_initator['role'] != 'moderator'){
+        //     return response()->json(['message' => 'You dont have access with your role'], 403);
+        // }
+
 
         if (!$category) {
             return response()->json(['message' => 'Category not found',
@@ -272,7 +280,7 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $user_initiator = Auth::user();
-        if($user_initator['role'] != 'moderator'){
+        if($user_initiator['role'] != 'moderator'){
             return response()->json(['message' => 'Cannot delete category with your role'], 403);
         }
 
