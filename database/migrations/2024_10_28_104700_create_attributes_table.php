@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name', 50);
             $table->boolean('is_required');
-            $table->enum('value_type', ['PRICE/KG', 'PRICE/PIECE', 'PLACE', 'QUANTITY', 'DATE', 'WEIGHT']);
+            $table->enum('value_type', ['PRICE/KG', 'PRICE/PIECE', 'PLACE', 'QUANTITY', 'DATE']);
             $table->timestamps();
         });
     }

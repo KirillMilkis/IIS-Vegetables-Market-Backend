@@ -14,12 +14,12 @@ class AttributeSeeder extends Seeder
     public function run(): void
     {
         $attribute1 = Attribute::factory()->create([
-            'name' => 'Price',
+            'name' => 'Price/kg',
             'is_required' => true,
             'value_type' => 'PRICE/KG'
         ]);
         $attribute2 = Attribute::factory()->create([
-            'name' => 'Price',
+            'name' => 'Price/piece',
             'is_required' => true,
             'value_type' => 'PRICE/PIECE'
         ]);
@@ -28,6 +28,17 @@ class AttributeSeeder extends Seeder
             'is_required' => true,
             'value_type' => 'PLACE'
         ]);
+        $attribute4 = Attribute::factory()->create([
+            'name' => 'Quantity',
+            'is_required' => true,
+            'value_type' => 'QUANTITY'
+        ]);
+        $attribute5 = Attribute::factory()->create([
+            'name' => 'Expires date',
+            'is_required' => false,
+            'value_type' => 'DATE'
+        ]);
+
 
         $attribute1->categories()->attach(2);
         $attribute2->categories()->attach(4);

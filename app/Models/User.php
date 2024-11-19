@@ -4,15 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 
-class User extends Model
+class User extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, HasApiTokens;
 
     protected $table = 'users';
     protected $primaryKey = 'id';
-    protected $fillable = ['username', 'firstname', 'lastname', 'password', 'phone', 'role'];
+    protected $fillable = ['username', 'firstname', 'lastname', 'password', 'phone', 'role', 'email', 'address'];
 
     public function orders()
     {
@@ -21,7 +23,7 @@ class User extends Model
 
     public function products()
     {
-        return $this->hasMany(Product::class);
+        return $this->hasMany(Product::class, 'farmer_id');
     }
 
     public function reviews()

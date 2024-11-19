@@ -11,6 +11,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SelfHarvestingController;
 use App\Http\Controllers\ReviewController;
 use App\Models\OrderProductQuantity;
+use App\Http\Controllers\AuthController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -25,11 +26,14 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::get('users/{id}', [UserController::class, 'show']);
     Route::put('users/{id}', [UserController::class, 'update']);
     Route::patch('users/{id}', [UserController::class, 'update']);
-    Route::delete('users/{id}', [UserController::class, 'destroy']);
+    Route::middleware('auth:sanctum')->delete('/users/delete/{id}', [UserController::class, 'delete']);
+    Route::get('/farmers', [UserController::class, 'getUsersWithProducts']);
+
 
     Route::get('products', [ProductController::class, 'index']);
     Route::get('products/filter', [ProductController::class, 'filter']);
     Route::post('products/create', [ProductController::class, 'store']);
+    Route::get('/farmer/{farmerId}/products', [ProductController::class, 'getProductsByFarmer']);
     Route::get('products/{id}', [ProductController::class, 'show']);
     Route::put('products/', [ProductController::class, 'update']);
     Route::patch('products/', [ProductController::class, 'update']);
@@ -37,11 +41,15 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/filter', [CategoryController::class, 'filter']);
-    Route::post('categories/create', [CategoryController::class, 'store']);
+    Route::get('categories/toApprove', [CategoryController::class, 'indexToApprove'])->middleware('auth:sanctum');
     Route::get('categories/{id}', [CategoryController::class, 'show']);
-    Route::put('categories/{id}', [CategoryController::class, 'update']);
-    Route::patch('categories/{id}', [CategoryController::class, 'update']);
-    Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
+    Route::put('categories/{id}', [CategoryController::class, 'update'])->middleware('auth:sanctum');
+    Route::patch('categories/{id}', [CategoryController::class, 'update'])->middleware('auth:sanctum');
+    Route::delete('categories/{id}', [CategoryController::class, 'destroy'])->middleware('auth:sanctum');
+    Route::post('categories/create', [CategoryController::class, 'store'])->middleware('auth:sanctum');
+    Route::put('categories/{id}/approve', [CategoryController::class, 'approveCategory'])->middleware('auth:sanctum');
+    Route::put('categories/{id}/reject', [CategoryController::class, 'rejectCategory'])->middleware('auth:sanctum');
+
 
     Route::get('attributes', [AttributeController::class, 'index']);
     Route::get('attributes/filter', [AttributeController::class, 'filter']);
@@ -52,6 +60,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::delete('attributes/{id}', [AttributeController::class, 'destroy']);
 
     Route::get('attribute_values', [AttributeValueController::class, 'index']);
+    Route::get('attribute_values/places', [AttributeValueController::class, 'indexPlaces']);
     Route::post('attribute_values/create', [AttributeValueController::class, 'store']);
     Route::get('attribute_values/{id}', [AttributeValueController::class, 'show']);
     Route::put('attribute_values/{id}', [AttributeValueController::class, 'update']);
@@ -86,9 +95,20 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::patch('Reviews/{id}', [ReviewController::class, 'update']);
     Route::delete('Reviews/{id}', [ReviewController::class, 'destroy']);
 
+
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    // Route::get('/user', [AuthController::class, 'user'])->middleware('auth:sanctum');
+
+
     Route::get('/csrf-token', function () {
         return response()->json(['csrf_token' => csrf_token()]);
     });
+
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+
+    Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
     
 
 

@@ -21,6 +21,7 @@ class CategoryRecourse extends JsonResource
             'status' => $this->status,
             'isFinal' => $this->is_final,
             'parentId' => $this->parent_id,
+            'parentName' => $this->parent ? $this->parent->name : null,
 
         ];
     }

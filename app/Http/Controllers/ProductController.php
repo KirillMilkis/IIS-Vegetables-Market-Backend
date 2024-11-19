@@ -10,6 +10,7 @@ use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use App\Models\Attribute;
+use App\Models\User;
 
 class ProductController extends Controller
 {
@@ -41,6 +42,23 @@ class ProductController extends Controller
         Session::put('filtered_products', $products);
       
         return ProductResource::collection($products);
+    }
+
+    public function getProductsByFarmer($farmerId)
+    {
+    
+    $user = User::find($farmerId);
+
+    if (!$user) {
+       
+        return response()->json(['message' => 'Farmer not found'], 404);
+    }
+
+    
+    $products = $user->products; 
+
+    
+    return ProductResource::collection($products);
     }
 
 

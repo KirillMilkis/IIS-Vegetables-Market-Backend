@@ -16,8 +16,7 @@ class AttributeValueController extends Controller
 {
 
 
-
-    public function index(Request $request)
+    public function indexPlaces(Request $request)
     {
         $attributeId = $request->input('attribute_id');
 
@@ -41,6 +40,30 @@ class AttributeValueController extends Controller
 
         return new AttributeValueCollection($attributeValues);
     }
+
+
+    public function indexAttributeProduct(Request $request)
+    {
+        $attributeId = $request->input('attribute_id');
+        $productId = $request->input('product_id');
+
+        if(!$attributeId || !$productId){
+            return response()->json(['message' => 'Should specify product_id and attribute_id', 'code' => 400], 400);
+        }
+
+
+        $attributeValues = AttributeValue::where('product_id', $productId)
+                                     ->where('attribute_id', $attributeId)
+                                     ->get();
+
+        if ($attributeValues->isEmpty()) {
+            return response()->json(['message' => 'No attribute values found', 'code' => 204], 204);
+        }
+
+        
+        return new AttributeValueCollection($attributeValues);
+    }
+
 
 
     public function store(Request $request)

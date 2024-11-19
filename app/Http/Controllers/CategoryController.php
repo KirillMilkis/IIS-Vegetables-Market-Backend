@@ -9,6 +9,8 @@ use App\Http\Resources\CategoryRecourse;
 use App\Http\Resources\CategoryResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth; 
+use App\Models\User; 
 
 class CategoryController extends Controller
 {
@@ -19,7 +21,13 @@ class CategoryController extends Controller
         $search = $request->input('name_like');         // Поисковый запрос
         $parentId = $request->input('parent_id');        // parentId
 
+        if (empty($attributes) && empty($search) && empty($parentId)) {
+            $categories = Category::all()->where('status', 'APPROVED'); // Все категории
+            return new CategoryCollection($categories);
+        }
+
         $query = Category::query();
+        $query->where('status', 'APPROVED');
 
         if (!empty($attributes) && is_array($attributes)) {
             foreach ($attributes as $attributeId) {
@@ -41,6 +49,7 @@ class CategoryController extends Controller
             }
         }
 
+        
         $categories = $query->get();
 
         if ($categories->isEmpty()) {
@@ -52,37 +61,158 @@ class CategoryController extends Controller
 
     }
 
-
-    // public function filter(Request $request)
-    // {
+    public function indexToApprove()
+    {
         
-    // }
+        $user_initator = Auth::user();
+        if($user_initator['role'] != 'moderator'){
+            return response()->json(['message' => 'You dont have access with your role'], 403);
+        }
 
+        $categories = Category::where('status', 'PROCESS')->get();
+
+        // Check if no categories were found
+        if ($categories->isEmpty()) {
+            return response()->json(['message' => 'No categories pending approval', 'code' => 204], 204);
+        }
+    
+        // Return the categories in a structured response (optional: use a resource/collection if needed)
+
+        $categories->transform(function ($category) {
+           
+            $category->parent_name = $category->parent ? $category->parent->name : null;
+            return $category;
+        });
+
+        return new CategoryCollection($categories);
+
+    }
+
+    public function approveCategory($categoryId){
+
+        $user_initator = Auth::user();
+        if($user_initator['role'] != 'moderator'){
+            return response()->json(['message' => 'You dont have access with your role'], 403);
+        }
+
+        $category = Category::find($categoryId);
+
+        if (!$category){
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+
+        if ($category->status == 'PROCESS'){
+            $category->status = 'APPROVED';
+        } else{
+            return response()->json(['message' => 'Category cannot be approved'], 422);
+        }
+
+        $category->save();
+
+
+    }
+
+    public function rejectCategory($categoryId){
+
+        $user_initator = Auth::user();
+        if($user_initator['role'] != 'moderator'){
+            return response()->json(['message' => 'You dont have access with your role'], 403);
+        }
+
+        $category = Category::find($categoryId);
+
+        if (!$category){
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+
+        if ($category->status == 'PROCESS'){
+            $category->status = 'REJECT';
+        } else{
+            return response()->json(['message' => 'Category cannot be approved'], 422);
+        }
+
+        $category->save();
+
+
+    }
 
     public function store(Request $request)
     {
+
+        $user_initiator = Auth::user();
+
         $input = collect($request -> all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
         })->toArray();
 
         $validator = $this->validator_create($input);
 
+
         if ($validator->fails()) {
             return response()-> json([
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(), 
-                'code' => 400]);
+                'code' => 400], 400);
         }
 
-        if (Category::create($input)) {
-            return response()->json(['message' => 'Category created',
-                'code' => 201], 
-                201);
-        } else {
-            return response()->json(['message' => 'Category not created',
+        if ($input['parent_id'] != null){
+            $parent = Category::find($input['parent_id']);
+
+            if (!$parent){
+                return response()->json(['message' => 'Parent category not found'], 404);
+            }
+
+            $category = Category::create($input);
+            if(!$category){
+                return response()->json(['message' => 'Category not created',
                 'code' => 500], 
                 500);
+            }
+
+            if($parent->isFinal == 'true'){
+                $parent->update([ 'isFinal' => false ]);
+                $category->setAttribute('isFinal', true);
+            } else{
+                $category->setAttribute('isFinal', false);
+            }
+            
+        } else {
+
+            $category = Category::create($input);
+            $category->setAttribute('status', 'PROCESS');
+            $category->setAttribute('isFinal', false);
+
+            if(!$category){
+                return response()->json(['message' => 'Category not created',
+                'code' => 500], 
+                500);
+            }
         }
+
+        switch ($user_initiator['role']) {
+            case 'moderator':
+                $category->status = 'APPROVED';
+                break;
+            case 'reg_user':
+                $category->status = 'PROCESS';
+                break;
+            default:
+                return response()->json(['message' => 'Cannot create category with your role'], 403);
+        }
+
+        
+        if ($request->has('attributes') && is_array($request->attributes)) {
+           
+            $attributeIds = collect($request->attributes)->pluck('id')->toArray();
+           
+            $category->attributes()->attach($attributeIds);
+        }
+
+
+        return response()->json(['message' => 'Category created',
+            'code' => 201], 
+            201);
+
     }
 
     public function show($id)
@@ -109,6 +239,9 @@ class CategoryController extends Controller
         }
 
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
+            if ($value === null) {
+                return []; 
+            }
             return [Str::snake($key) => $value];
         })->toArray();
 
@@ -122,6 +255,10 @@ class CategoryController extends Controller
         }
 
         if ($category->update($input)) {
+            if (isset($request->attributes_id)) {
+                $category->attributes()->sync($request->attributes_id);
+            }
+
             return response()->json(['message' => 'Category updated',
                 'code' => 200],
                 200);
@@ -134,6 +271,11 @@ class CategoryController extends Controller
 
     public function destroy($id)
     {
+        $user_initiator = Auth::user();
+        if($user_initator['role'] != 'moderator'){
+            return response()->json(['message' => 'Cannot delete category with your role'], 403);
+        }
+
         $category = Category::find($id);
 
         if (!$category) {
@@ -157,9 +299,9 @@ class CategoryController extends Controller
     {
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
-            'parent_id' => ['required', 'integer'],
-            'status' => ['required', 'string|in:PROCESS,APPROVED,REJECTED' ],
-            'is_final' => ['required', 'boolean'],
+            'parent_id' => ['nullable', 'exists:categories,id', 'integer'],
+            'status' => ['string','in:PROCESS,APPROVED,REJECTED'],
+            'is_final' => ['boolean'],
         ]);
     }
    

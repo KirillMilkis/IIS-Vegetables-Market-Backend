@@ -25,7 +25,7 @@ class UserFactory extends Factory
             'lastname' => $this->faker->lastName,
             'address' => $this->faker->address,
             'phone' => $this->faker->phoneNumber,
-            'role' => $this->faker->randomElement(['ADMIN', 'MODER', 'REG_CUSTOMER_FARMER', 'REG_CUSTOMER', 'UNREG_CUSTOMER']),
+            'role' => $this->faker->randomElement(['reg_user', 'moderator', 'admin']),
         ];
     }
 

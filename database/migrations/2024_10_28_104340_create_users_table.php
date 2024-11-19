@@ -17,10 +17,10 @@ return new class extends Migration
             $table->string('firstname', 50);
             $table->string('lastname', 50);
             $table->string('password', 255);
-            $table->string('email', 50)->unique();
-            $table->string('phone', 50);
-            $table->string('address', 100);
-            $table->enum('role', ['ADMIN', 'MODER', 'REG_CUSTOMER_FARMER', 'REG_CUSTOMER', 'UNREG_CUSTOMER']);
+            $table->string('email', 50)->unique()->nullable();
+            $table->string('phone', 50)->nullable();
+            $table->string('address', 100)->nullable();
+            $table->enum('role', ['reg_user', 'moderator', 'admin']);
             $table->timestamps();
         });
     }

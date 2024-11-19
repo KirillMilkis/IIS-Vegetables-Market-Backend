@@ -15,8 +15,17 @@ class AttributeController extends Controller
     public function index(Request $request)
     {
         $categoryId = $request->input('category_id');
+        $productId = $request->input('product_id');
 
         $query = Attribute::query();
+        if ($categoryId && $productId){
+
+            return response()->json([
+                'message' => 'You cannot specify both category_id and product_id at the same time.',
+                'code' => 400
+            ], 400);
+        }
+        
 
         if ($categoryId) {
 
@@ -25,6 +34,12 @@ class AttributeController extends Controller
             $query->whereHas('categories', function($q) use ($parentCategoryIds) {
                 $q->whereIn('categories.id', $parentCategoryIds);
             });
+        } else if ($productId) {
+
+            $query->whereHas('attribute_values', function($q) use ($productId) {
+                $q->where('product_id', $productId); // предполагаем, что в attribute_values есть product_id
+            });
+
         }
 
         $attributes = $query->get();

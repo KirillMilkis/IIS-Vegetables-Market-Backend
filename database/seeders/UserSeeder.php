@@ -17,7 +17,20 @@ class UserSeeder extends Seeder
     {
         User::factory(10)->create();
         User::factory()->create([
-            'role' => 'ADMIN',
+            'username' => 'pidoras',
+            'password' => bcrypt('12345678'),
+            'role' => 'admin',
         ]);
+        User::factory()->create([
+            'username' => 'username',
+            'password' => bcrypt('password'),
+            'role' => 'reg_user',
+        ]);
+        User::factory()->create([
+            'username' => 'moder',
+            'password' => bcrypt('moder'),
+            'role' => 'moderator',
+        ]);
+
     }
 }

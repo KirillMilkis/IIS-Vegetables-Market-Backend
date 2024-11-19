@@ -13,9 +13,9 @@ class Product extends Model
     protected $primaryKey = 'id';
     protected $fillable = ['name', 'description', 'farmer_id', 'image_root', 'category_id'];
 
-    public function farmer()
+    public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'farmer_id');
     }
 
     public function category()

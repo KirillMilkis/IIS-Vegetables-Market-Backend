@@ -38,5 +38,11 @@ class CategorySeeder extends Seeder
             'parent_id' => $parent2->id,
             'is_final' => true
         ]);
+        $child = Category::factory()->create([
+            'name' => 'Jablko',
+            'parent_id' => null,
+            'is_final' => true,
+            'status' => 'PROCESS'
+        ]);
     }
 }

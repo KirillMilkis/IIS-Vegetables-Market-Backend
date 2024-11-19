@@ -10,6 +10,7 @@ use App\Http\Resources\UserResource;
 use App\Http\Resources\UserCollection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -34,6 +35,15 @@ class UserController extends Controller
         return new UserCollection($users);
     } 
 
+    public function getUsersWithProducts()
+    {
+        
+        $users = User::has('products')
+                 ->select('id', 'firstname', 'lastname', 'email')
+                 ->get();
+        return new UserCollection($users);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -45,13 +55,20 @@ class UserController extends Controller
             return [Str::snake($key) => $value];
         })->toArray();
 
+        if ($input['role'] != 'moderator' && $input['role'] != 'reg_user'){
+            return response()-> json([
+                'message' => 'Cannot create admin',
+                'errors' => [], 
+                'code' => 400], 400);
+        }
+
         $validator = $this->validator_create($input);
 
         if ($validator->fails()) {
-            return response()-> json([
+            return response()->json([
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(), 
-                'code' => 400]);
+                'code' => 400], 400);
         }
 
         $input['password'] = bcrypt($input['password']);
@@ -62,8 +79,8 @@ class UserController extends Controller
                 201);
         } else {
             return response()->json(['message' => 'User not created',
-                'code' => 500], 
-                500);
+                'code' => 200], 
+                200);
         }
     }
 
@@ -129,14 +146,29 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function delete(string $id)
     {
+
+        $userInitator = Auth::user();
+
+        if ($userInitator->role != 'admin') {
+            return response()->json([
+                'message' => 'You do not have permission to delete this post',
+                'code' => 403 
+            ]);
+        }
+
         $user = User::find($id);
 
         if (!$user) {
             return response()->json(['message' => 'User not found',
                 'code' => 404], 
                 404);
+        }
+        if ($user->role == 'admin') {
+            return response()->json(['message' => 'Cannot delete admin',
+                'code' => 403], 
+                403);
         }
 
         if ($user->delete()) {
@@ -158,7 +190,8 @@ class UserController extends Controller
             'address' => 'max:100',
             'password' => 'required|string|min:8|max:32',
             'email' => 'string|max:255|unique:users',
-            'role' => 'required|string|in:ADMIN,MODER,REG_CUSTOMER_FARMER,REG_CUSTOMER,UNREG_CUSTOMER',
+            'phone' => 'max:255',
+            'role' => 'required|string|in:reg_user,moderator,admin',
         ]);
     }
 }
