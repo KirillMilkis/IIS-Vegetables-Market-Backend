@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Category>
  */
-class AttributeFactory extends Factory
+class CategoryAttributeFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -17,8 +17,9 @@ class AttributeFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->word,
-            'value_type' => $this->faker->randomElement(['PRICE/KG', 'PRICE/PIECE', 'ORIGINAL PLACE', 'AVAILABLE QUANTITY', 'EXPIRATION DATE', 'WEIGHT']),
+            'is_required' => true,
+            'attribute_id' => \App\Models\Attribute::inRandomOrder()->first()->id,
+            'category_id' => \App\Models\Category::inRandomOrder()->first()->id,
         ];
     }
 }

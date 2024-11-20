@@ -32,8 +32,8 @@ class AttributeController extends Controller
 
             $parentCategoryIds = $this->getParentsCategoryIds($categoryId);
 
-            $query->whereHas('categories', function($q) use ($parentCategoryIds) {
-                $q->whereIn('categories.id', $parentCategoryIds);
+            $query->whereHas('attribute_categories', function($q) use ($parentCategoryIds) {
+                $q->whereIn('category_id', $parentCategoryIds); // Фильтруем по родительским категориям
             });
         } else if ($productId) {
 
@@ -178,7 +178,6 @@ class AttributeController extends Controller
         return Validator::make($data, [
             'name' => 'required|string|max:50',
             'value_type' => 'required|string|in:PRICE/KG, PRICE/PIECE, ORIGINAL PLACE, AVAILABLE, QUANTITY, EXPIRATION DATE, WEIGHT ',
-            'is_required' => 'required|boolean',
         ]);
     }
 

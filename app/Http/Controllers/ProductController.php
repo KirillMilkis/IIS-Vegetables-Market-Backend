@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use App\Models\Attribute;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -110,6 +111,30 @@ class ProductController extends Controller
                         });
                     }
                 }
+
+                if ($attribute && $attribute->value_type === 'DATE') {
+                    if (isset($data['value']) && is_array($data['value'])) {
+                        $value = $data['value'];  // Значение, с которым будет сравнение
+                
+                        $query->whereHas('attribute_values', function ($q) use ($attributeId, $value, ) {
+                            // Преобразуем значение из базы данных и входное значение в формат YYYY-MM-DD для корректного сравнения
+                            $q->where('attribute_id', $attributeId)
+                              ->whereRaw('STR_TO_DATE(value, "%d-%m-%Y") >= ?', [$value]);  // Преобразование строки в дату и сравнение
+                        });
+                    }
+                }
+
+                if ($attribute && $attribute->value_type === 'QUANTITY') {
+                    if (isset($data['value'])) {
+                        $value = data['value'];
+                        $query->whereHas('attribute_values', function($q) use ($attributeId, $value) {
+                            $q->where('attribute_id', $attributeId)
+                            ->where('value', '>=', $value);
+                        });
+                    }
+                }
+
+
             }
         }
 
@@ -154,10 +179,54 @@ class ProductController extends Controller
         $validator = $this->validator_create($input);
 
         $category = Category::find($input['category_id']);
+
+        if (!$category) {
+            return response()->json([
+                'message' => 'Category not found',
+                'code' => 404
+            ], 404);
+        }
+
+
         if($category->parent_id == null){
             return response()->json(['message' => 'Product created',
                 'code' => 400],
                 400);
+        }
+
+        $attributes = $category->attributes()->wherePivot('is_required', true)->get();
+
+        $attributeValues = $request->input('attribute_values');
+
+        if (!$attributeValues || count($attributeValues) < $attributes->count()) {
+            return response()->json([
+                'message' => 'Not all required attribute values provided',
+                'code' => 400
+            ], 400);
+        }
+    
+        // Проверяем, что для каждого обязательного атрибута есть значение
+        foreach ($attributes as $attribute) {
+            $value = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
+            if (!$value || empty($value['value'])) {
+                return response()->json([
+                    'message' => "Value for attribute {$attribute->name} is required",
+                    'code' => 400
+                ], 400);
+            }
+        }
+    
+        // Создаем продукт
+        $product = Product::create($input);
+    
+        // Создаем записи в таблице AttributeValue
+        foreach ($attributes as $attribute) {
+            $value = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
+            $product->attributeValues()->create([
+                'attribute_id' => $attribute->id,
+                'value' => $value['value'],
+                'product_id' => $product_id
+            ]);
         }
 
         if ($validator->fails()) {
@@ -165,17 +234,14 @@ class ProductController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(), 
                 'code' => 400]);
-        }
+        }   
 
-        if (Product::create($input)) {
-            return response()->json(['message' => 'Product created',
-                'code' => 201],
-                201);
-        } else {
-            return response()->json(['message' => 'Product not created',
-                'code' => 500],
-                500);
-        }
+
+        return response()->json([
+            'message' => 'Product created successfully',
+            'product' => $product,
+            'code' => 201
+        ], 201);
         
     }
 

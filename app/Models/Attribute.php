@@ -12,11 +12,11 @@ class Attribute extends Model
 
     protected $table = 'attributes';
     protected $primaryKey = 'id';
-    protected $fillable = ['name', 'is_required', 'value_type'];
+    protected $fillable = ['name', 'value_type'];
 
-    public function categories()
+    public function attribute_categories()
     {
-        return $this->belongsToMany((Category::class));
+        return $this->hasMany(CategoryAttribute::class);
     }
     public function attribute_values()
     {

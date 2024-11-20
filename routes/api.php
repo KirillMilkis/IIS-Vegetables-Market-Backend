@@ -33,7 +33,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
 
     Route::get('products', [ProductController::class, 'index']);
     Route::get('products/filter', [ProductController::class, 'filter']);
-    Route::post('products/create', [ProductController::class, 'store']);
+    Route::post('products/create', [ProductController::class, 'store'])->middleware('auth:sanctum');
     Route::get('/farmer/{farmerId}/products', [ProductController::class, 'getProductsByFarmer']);
     Route::get('products/{id}', [ProductController::class, 'show']);
     Route::put('products/', [ProductController::class, 'update']);

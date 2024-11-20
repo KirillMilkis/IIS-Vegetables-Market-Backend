@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('attributes', function (Blueprint $table) {
             $table->id();
             $table->string('name', 50);
-            $table->boolean('is_required');
             $table->enum('value_type', ['PRICE/KG', 'PRICE/PIECE', 'PLACE', 'QUANTITY', 'DATE']);
             $table->timestamps();
         });
