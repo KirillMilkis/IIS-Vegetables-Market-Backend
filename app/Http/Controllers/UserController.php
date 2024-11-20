@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UserResource;
@@ -11,6 +12,7 @@ use App\Http\Resources\UserCollection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -42,6 +44,39 @@ class UserController extends Controller
                  ->select('id', 'firstname', 'lastname', 'email')
                  ->get();
         return new UserCollection($users);
+    }
+
+    public function getFarmerByProductId(Request $request)
+    {
+
+        $productId = $request->input('product_id');
+
+    
+        if (!$productId) {
+            return response()->json([
+                'message' => 'You must specify product_id','code' => 400], 400);
+        }
+
+
+        $product = Product::find($productId);
+
+    
+        if (!$product) {
+            return response()->json([
+                'message' => 'Product not found', 'code' => 404], 404);
+        }
+
+        $user_id = $product->farmer_id;
+        $farmer = User::find($user_id);
+
+    
+        if (!$farmer) {
+            return response()->json([
+                'message' => 'Farmer not found for this product','code' => 404], 404);
+        }
+
+        
+        return new UserResource($farmer);
     }
 
     /**
@@ -84,6 +119,8 @@ class UserController extends Controller
         }
     }
 
+    
+
     /**
      * Display the specified resource.
      */
@@ -106,6 +143,25 @@ class UserController extends Controller
     public function update(Request $request)
     {
         $user = User::find($request->id);
+        $authUser = Auth::user(); 
+
+        if ($authUser->role === 'reg_user' || $authUser->role === 'moderator') {
+            if ($authUser->id !== $user->id) {
+                return response()->json(['message' => 'You can only modify your own account', 'code' => 403], 403);
+            }
+        } 
+
+        $input = collect($request->all())->mapWithKeys(function ($value, $key) {
+            return [Str::snake($key) => $value];
+        })->toArray();
+
+        unset($input['id']);
+
+        $validator =  $this->validator_update($input);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed','errors' => $validator->errors(),'code' => 400], 400);
+        }
 
         if (!$user) {
             return response()->json(['message' => 'User not found',
@@ -113,27 +169,12 @@ class UserController extends Controller
                 404);
         }
 
-        $input = collect($request->all())->mapWithKeys(function ($value, $key) {
-            return [Str::snake($key) => $value];
-        })->toArray();
-
-        $validator = $this->validator_create($input);
-
-        if ($validator->fails()) {
-            return response()-> json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(), 
-                'code' => 400]);
-        }
-
         if (isset($input['password'])) {
             $input['password'] = bcrypt($input['password']);
         }
 
         if ($user->update($input)) {
-            return response()->json(['message' => 'User updated',
-                'code' => 200], 
-                200);
+            return new UserResource($user);
         } else {
             return response()->json(['message' => 'User not updated',
                 'code' => 414], 
@@ -149,9 +190,9 @@ class UserController extends Controller
     public function delete(string $id)
     {
 
-        $userInitator = Auth::user();
+        $userInitiator = Auth::user();
 
-        if ($userInitator->role != 'admin') {
+        if ($userInitiator->role != 'admin') {
             return response()->json([
                 'message' => 'You do not have permission to delete this post',
                 'code' => 403 
@@ -187,11 +228,24 @@ class UserController extends Controller
             'username' => 'required|max:20|unique:users',
             'firstname' => 'required|max:32',
             'lastname' => 'required|max:32',
-            'address' => 'max:100',
+            'address' => 'string|max:100',
             'password' => 'required|string|min:8|max:32',
             'email' => 'string|max:255|unique:users',
-            'phone' => 'max:255',
+            'phone' => 'string|max:255',
             'role' => 'required|string|in:reg_user,moderator,admin',
+        ]);
+    }
+
+    private function validator_update($data){
+        return Validator::make($data, [
+            'username' => ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($user->id),],
+            'firstname' => 'nullable|string|max:32',
+            'lastname' => 'nullable|string|max:32',
+            'address' => 'nullable|string|max:100',
+            'password' => 'nullable|string|min:8|max:32', // Для обновления пароля
+            'email' => ['nullable','string','max:255','email',Rule::unique('users')->ignore($user->id),],
+            'phone' => 'nullable|string|max:255',
+            'role' => 'nullable|string|in:reg_user,moderator,admin',
         ]);
     }
 }

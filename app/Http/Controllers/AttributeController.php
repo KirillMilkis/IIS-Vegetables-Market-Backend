@@ -18,6 +18,7 @@ class AttributeController extends Controller
         $productId = $request->input('product_id');
 
         $query = Attribute::query();
+
         if ($categoryId && $productId){
 
             return response()->json([
@@ -53,11 +54,7 @@ class AttributeController extends Controller
         
     }
 
-    // public function filter(Request $request)
-    // {
-        
 
-    // }
 
     public function getParentsCategoryIds($categoryId)
     {

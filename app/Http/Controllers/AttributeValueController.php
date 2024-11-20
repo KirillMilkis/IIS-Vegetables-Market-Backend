@@ -41,6 +41,22 @@ class AttributeValueController extends Controller
         return new AttributeValueCollection($attributeValues);
     }
 
+    public function index(Request $request)
+    {
+        $productId = $request->input('product_id');
+        
+        if($productId){
+            $attributeValues = AttributeValue::where('product_id', $productId)->get();
+        } else{
+            $attributeValues = AttributeValue::all();
+        }
+
+        if ($attributeValues->isEmpty()) {
+            return response()->json(['message' => 'No attribute values found', 'code' => 204], 204);
+        }
+        
+        return new AttributeValueCollection($attributeValues);
+    }
 
     public function indexAttributeProduct(Request $request)
     {

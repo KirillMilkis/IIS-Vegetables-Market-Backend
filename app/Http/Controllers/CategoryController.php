@@ -253,7 +253,7 @@ class CategoryController extends Controller
             return [Str::snake($key) => $value];
         })->toArray();
 
-        $validator = $this->validator_create($input);
+        $validator = $this->validator_update($input);
 
         if ($validator->fails()) {
             return response()->json([
@@ -312,5 +312,16 @@ class CategoryController extends Controller
             'is_final' => ['boolean'],
         ]);
     }
+
+    private function validator_update(array $data)
+    {
+        return Validator::make($data, [
+            'name' => ['nullable', 'string', 'max:255'],
+            'parent_id' => ['nullable', 'exists:categories,id', 'integer'],
+            'status' => ['nullable','string','in:PROCESS,APPROVED,REJECTED'],
+            'is_final' => ['nullable','boolean'],
+        ]);
+    }
+   
    
 }

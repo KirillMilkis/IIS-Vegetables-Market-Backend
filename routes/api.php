@@ -22,9 +22,10 @@ Route::get('/user', function (Request $request) {
 Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], function () {
     Route::get('users', [UserController::class, 'index']);
     Route::get('users/role/{role}', 'UserController@index_specified');
-    Route::post('users/create', [UserController::class, 'store']);
+    Route::get('users/farmer', [UserController::class, 'getFarmerByProductId']);
+    Route::post('users/create', [UserController::class, 'store'])->middleware('auth:sanctum');
     Route::get('users/{id}', [UserController::class, 'show']);
-    Route::put('users/{id}', [UserController::class, 'update']);
+    Route::put('users/{id}', [UserController::class, 'update'])->middleware('auth:sanctum');
     Route::patch('users/{id}', [UserController::class, 'update']);
     Route::middleware('auth:sanctum')->delete('/users/delete/{id}', [UserController::class, 'delete']);
     Route::get('/farmers', [UserController::class, 'getUsersWithProducts']);
@@ -60,7 +61,6 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::delete('attributes/{id}', [AttributeController::class, 'destroy']);
 
     Route::get('attribute_values', [AttributeValueController::class, 'index']);
-    Route::get('attribute_values/productAttribute', [AttributeValueController::class, 'indexAttributeProduct']);
     Route::get('attribute_values/places', [AttributeValueController::class, 'indexPlaces']);
     Route::post('attribute_values/create', [AttributeValueController::class, 'store']);
     Route::get('attribute_values/{id}', [AttributeValueController::class, 'show']);
