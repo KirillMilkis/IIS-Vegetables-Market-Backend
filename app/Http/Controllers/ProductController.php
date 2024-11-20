@@ -7,18 +7,18 @@ use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\ProductResource;
 use App\Models\Category;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Session;
 use App\Models\Attribute;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
 
-        $sessionId = Session::getId();
+        // $sessionId = Session::getId();
 
         $categoryId = $request->input('category_id');
         $query = Product::query();
@@ -40,7 +40,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'No products found', 'code' => 204], 204);
         }
 
-        Session::put('filtered_products', $products);
+        // Session::put('filtered_products', $products);
       
         return ProductResource::collection($products);
     }
@@ -168,15 +168,22 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $userInitiator = Auth::user();
-        $farmerId = $userInitiator->id;
+        // $farmerId = $userInitiator['role'];
 
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
         })->toArray();
 
-        $input['farmer_id'] = $farmerId;
+        // $input['farmer_id'] = $farmerId;
 
         $validator = $this->validator_create($input);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(), 
+                'code' => 400], 400);
+        }   
 
         $category = Category::find($input['category_id']);
 
@@ -187,14 +194,11 @@ class ProductController extends Controller
             ], 404);
         }
 
-
-        if($category->parent_id == null){
-            return response()->json(['message' => 'Product created',
-                'code' => 400],
-                400);
-        }
-
-        $attributes = $category->attributes()->wherePivot('is_required', true)->get();
+        $attributes = $category->category_attributes()
+        ->where('is_required', true)
+        ->with('attribute')  // Eager load the Attribute model
+        ->get()
+        ->pluck('attribute');  // Get only the related Attribute models
 
         $attributeValues = $request->input('attribute_values');
 
@@ -220,21 +224,13 @@ class ProductController extends Controller
         $product = Product::create($input);
     
         // Создаем записи в таблице AttributeValue
-        foreach ($attributes as $attribute) {
-            $value = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
-            $product->attributeValues()->create([
-                'attribute_id' => $attribute->id,
+        foreach ($attributeValues as $value) {
+            $product->attribute_values()->create([
+                'attribute_id' => $value['attribute_id'],
                 'value' => $value['value'],
-                'product_id' => $product_id
+                'product_id' => $product->id,
             ]);
         }
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(), 
-                'code' => 400]);
-        }   
 
 
         return response()->json([
@@ -260,49 +256,68 @@ class ProductController extends Controller
     {
         $userInitiator = Auth::user();
 
+        // Поиск продукта
         $product = Product::find($request->id);
 
         if (!$product) {
-            return response()->json(['message' => 'Product not found',
-                'code' => 404], 
-                404);
+            return response()->json([
+                'message' => 'Product not found',
+                'code' => 404,
+            ], 404);
         }
 
-        if($product->farmer_id != $userInitiator->id){
-            return response()->json(['message' => "You dont have access to change other user's products",
-            'code' => 403], 
-            403);
+        // Проверка прав доступа
+        if ($product->farmer_id != $userInitiator->id) {
+            return response()->json([
+                'message' => "You don't have access to change other user's products",
+                'code' => 403,
+            ], 403);
         }
 
-        $category = Category::find($input['category_id']);
-        if($category->parent_id == null){
-            return response()->json(['message' => 'Product created',
-                'code' => 400],
-                400);
+        // Проверка категории
+        $category = Category::find($request->category_id);
+        if (!$category) {
+            return response()->json([
+                'message' => 'Invalid category',
+                'code' => 400,
+            ], 400);
         }
 
+        // Преобразование данных из snake_case
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
         })->toArray();
 
+        // Валидация данных
         $validator = $this->validator_update($input);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(), 
-                'code' => 400]);
+                'errors' => $validator->errors(),
+                'code' => 400,
+            ], 400);
         }
 
-        if ($product->update($input)) {
-            return response()->json(['message' => 'Product updated',
-                'code' => 200],
-                200);
-        } else {
-            return response()->json(['message' => 'Product not updated',
-                'code' => 500],
-                500);
+        // Обновление основного продукта
+        if (!$product->update($input)) {
+            return response()->json([
+                'message' => 'Product not updated',
+                'code' => 500,
+            ], 500);
         }
+
+        // Обновление значений атрибутов
+        $attributeValues = $request->input('attribute_values', []);
+        foreach ($attributeValues as $attributeValue) {
+            // Вызов метода AttributeValueController
+            app('App\Http\Controllers\AttributeValueController')->updateValue($product->id, $attributeValue);
+        }
+
+        return response()->json([
+            'message' => 'Product updated',
+            'code' => 200,
+        ], 200);
     }
 
     public function destroy($id)
@@ -329,9 +344,9 @@ class ProductController extends Controller
         return Validator::make($data, [
             'name' => 'required|max:32',
             'description' => 'required|max:255',
-            'farmer_id' => 'required|integer|exists:user,id',
+            'farmer_id' => 'required|integer|exists:users,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'category_id' => 'required|integer|exists:category,id',
+            'category_id' => 'required|integer|exists:categories,id',
         ]);
     }
 
@@ -341,7 +356,7 @@ class ProductController extends Controller
             'description' => 'nullable|max:255',
             'farmer_id' => 'nullable|integer|exists:users,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'category_id' => 'nullable|integer|exists:category,id',
+            'category_id' => 'nullable|integer|exists:categories,id',
         ]);
 
     }

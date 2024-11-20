@@ -27,7 +27,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::get('users/{id}', [UserController::class, 'show']);
     Route::put('users/{id}', [UserController::class, 'update'])->middleware('auth:sanctum');
     Route::patch('users/{id}', [UserController::class, 'update']);
-    Route::middleware('auth:sanctum')->delete('/users/delete/{id}', [UserController::class, 'delete']);
+    Route::delete('users/{id}', [UserController::class, 'delete'])->middleware('auth:sanctum');
     Route::get('/farmers', [UserController::class, 'getUsersWithProducts']);
 
 
@@ -36,7 +36,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::post('products/create', [ProductController::class, 'store'])->middleware('auth:sanctum');
     Route::get('/farmer/{farmerId}/products', [ProductController::class, 'getProductsByFarmer']);
     Route::get('products/{id}', [ProductController::class, 'show']);
-    Route::put('products/', [ProductController::class, 'update']);
+    Route::put('products/', [ProductController::class, 'update'])->middleware('auth:sanctum');;
     Route::patch('products/', [ProductController::class, 'update']);
     Route::delete('products/{id}', [ProductController::class, 'destroy']);
 

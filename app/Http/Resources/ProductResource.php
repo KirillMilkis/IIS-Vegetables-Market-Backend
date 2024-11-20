@@ -19,7 +19,8 @@ class ProductResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'farmerId' => $this->farmer_id,
-            'imageRoot' => $this->image_root
+            'imageRoot' => $this->image_root,
+            'category_id' => $this->category_id
         ];
     }
 }

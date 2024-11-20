@@ -66,8 +66,8 @@ class UserController extends Controller
                 'message' => 'Product not found', 'code' => 404], 404);
         }
 
-        $user_id = $product->farmer_id;
-        $farmer = User::find($user_id);
+        $userId = $product->farmer_id;
+        $farmer = User::find($userId);
 
     
         if (!$farmer) {
@@ -157,7 +157,7 @@ class UserController extends Controller
 
         unset($input['id']);
 
-        $validator =  $this->validator_update($input);
+        $validator =  $this->validator_update($input, $user);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed','errors' => $validator->errors(),'code' => 400], 400);
@@ -236,12 +236,12 @@ class UserController extends Controller
         ]);
     }
 
-    private function validator_update($data){
+    private function validator_update($data, $user){
         return Validator::make($data, [
-            'username' => ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($user->id),],
-            'firstname' => 'nullable|string|max:32',
-            'lastname' => 'nullable|string|max:32',
-            'address' => 'nullable|string|max:100',
+            'username' => ['required', 'string', 'max:20', Rule::unique('users')->ignore($user->id),],
+            'firstname' => 'required|string|max:32',
+            'lastname' => 'required|string|max:32',
+            'address' => 'required|string|max:100',
             'password' => 'nullable|string|min:8|max:32', // Для обновления пароля
             'email' => ['nullable','string','max:255','email',Rule::unique('users')->ignore($user->id),],
             'phone' => 'nullable|string|max:255',

@@ -206,8 +206,19 @@ class CategoryController extends Controller
         if ($request->has('attributes') && is_array($request->attributes)) {
            
             $attributeIds = collect($request->attributes)->pluck('id')->toArray();
-           
-            $category->attributes()->attach($attributeIds);
+    
+        // Loop through each attribute to attach it with additional pivot data
+            foreach ($request->attributes as $attribute) {
+                $dataToAttach = [
+                    'category_id' => $category->id,
+                    'attribute_id' => $attribute['id'],
+                    // You can add other pivot columns here like 'is_required'
+                    'is_required' => $attribute['is_required'] ?? false, // Default value is false if not provided
+                ];
+
+            // Attach the attribute to the category using the pivot table
+            $category->attributes()->attach($attribute['id'], $dataToAttach);
+    }
         }
 
 
@@ -233,11 +244,11 @@ class CategoryController extends Controller
     public function update(Request $request)
     {
         $category = Category::find($request->id);
-        // $user_initator = Auth::user();
+        $user_initator = Auth::user();
 
-        // if($user_initator['role'] != 'moderator'){
-        //     return response()->json(['message' => 'You dont have access with your role'], 403);
-        // }
+        if($user_initator['role'] != 'moderator'){
+            return response()->json(['message' => 'You dont have access with your role'], 403);
+        }
 
 
         if (!$category) {

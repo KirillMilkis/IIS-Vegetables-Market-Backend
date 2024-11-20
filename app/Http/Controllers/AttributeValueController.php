@@ -157,6 +157,28 @@ class AttributeValueController extends Controller
 
     }
 
+    public function updateValue($productId, $attributeValueData)
+    {
+        // Проверка на существование записи AttributeValue
+        $attributeValue = AttributeValue::where('product_id', $productId)
+            ->where('attribute_id', $attributeValueData['attribute_id'])
+            ->first();
+
+        if ($attributeValue) {
+            // Обновляем существующее значение
+            $attributeValue->update([
+                'value' => $attributeValueData['value'],
+            ]);
+        } else {
+            // Создаем новую запись, если её нет
+            AttributeValue::create([
+                'product_id' => $productId,
+                'attribute_id' => $attributeValueData['attribute_id'],
+                'value' => $attributeValueData['value'],
+            ]);
+        }
+    }
+
 
     public function destroy($id)
     {

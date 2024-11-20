@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             AttributeSeeder::class,
             CategoryAttributeSeeder::class,
             AttributeValueSeeder::class,
+            SelfHarvestingSeeder::class,
             
         ]);
 

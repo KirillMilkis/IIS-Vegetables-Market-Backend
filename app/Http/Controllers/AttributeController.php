@@ -30,15 +30,13 @@ class AttributeController extends Controller
 
         if ($categoryId) {
 
-            $parentCategoryIds = $this->getParentsCategoryIds($categoryId);
-
-            $query->whereHas('attribute_categories', function($q) use ($parentCategoryIds) {
-                $q->whereIn('category_id', $parentCategoryIds); // Фильтруем по родительским категориям
+            $query->whereHas('attribute_categories', function($q) use ($categoryId) {
+                $q->where('category_id', $categoryId); 
             });
         } else if ($productId) {
 
             $query->whereHas('attribute_values', function($q) use ($productId) {
-                $q->where('product_id', $productId); // предполагаем, что в attribute_values есть product_id
+                $q->where('product_id', $productId); 
             });
 
         }
@@ -47,6 +45,20 @@ class AttributeController extends Controller
 
         if ($attributes->isEmpty()) {
             return response()->json(['message' => 'No attributes found', 'code' => 204], 204);
+        }
+
+        if ($categoryId) {
+            $attributes->each(function ($attribute) use ($categoryId) {
+                // Find the associated pivot record (category_attribute) that matches the given categoryId
+                $categoryAttribute = $attribute->attribute_categories->filter(function ($categoryAttribute) use ($categoryId) {
+                    return $categoryAttribute->category_id == $categoryId;
+                })->first(); // Get the first match (if any)
+                
+                if ($categoryAttribute) {
+                    // Dynamically attach 'is_required' to the attribute object from the specific category
+                    $attribute->is_required = $categoryAttribute->is_required;
+                }
+            });
         }
 
 
