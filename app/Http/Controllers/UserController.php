@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Models\SelfHarvesting;
 
 class UserController extends Controller
 {
@@ -26,18 +27,7 @@ class UserController extends Controller
         
     }
 
-    /**
-     * Display a listing of the users with special roles.
-     */
-    public function index_specified(string $role)
-    {
-    
-        $users = User::where('role', $role)->get();
-
-        return new UserCollection($users);
-    } 
-
-    public function getUsersWithProducts()
+    public function getFarmers()
     {
         
         $users = User::has('products')
@@ -143,6 +133,13 @@ class UserController extends Controller
     public function update(Request $request)
     {
         $user = User::find($request->id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found',
+                'code' => 404], 
+                404);
+        }
+
         $authUser = Auth::user(); 
 
         if ($authUser->role === 'reg_user' || $authUser->role === 'moderator') {
@@ -163,12 +160,6 @@ class UserController extends Controller
             return response()->json(['message' => 'Validation failed','errors' => $validator->errors(),'code' => 400], 400);
         }
 
-        if (!$user) {
-            return response()->json(['message' => 'User not found',
-                'code' => 404], 
-                404);
-        }
-
         if (isset($input['password'])) {
             $input['password'] = bcrypt($input['password']);
         }
@@ -182,6 +173,35 @@ class UserController extends Controller
         }
 
 
+    }
+
+
+    public function attachSelfHarvesting(Request $request)
+    {
+        // Найти пользователя по ID
+        $authUser = Auth::user(); 
+
+          // Получить идентификатор SelfHarvesting из запроса
+        $selfHarvestingId = $request->input('self_harvesting_id');
+
+        // Проверить, что идентификатор передан
+        if (empty($selfHarvestingId)) {
+            return response()->json(['message' => 'Invalid or missing self_harvesting_id', 'code' => 400], 400);
+        }
+
+        // Проверить существование SelfHarvesting по переданному ID
+        $selfHarvestingExists = SelfHarvesting::where('id', $selfHarvestingId)->exists();
+
+        if (!$selfHarvestingExists) {
+            return response()->json(['message' => 'SelfHarvesting not found', 'code' => 404], 404);
+        }
+        // Привязать SelfHarvesting к пользователю
+        $authUser->selfHarvestingsVisits()->syncWithoutDetaching([$selfHarvestingId]);
+
+        return response()->json([
+            'message' => 'SelfHarvesting(s) attached successfully',
+            'code' => 200,
+        ], 200);
     }
 
     /**

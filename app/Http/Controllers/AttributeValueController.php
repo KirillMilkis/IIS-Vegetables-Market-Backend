@@ -16,23 +16,35 @@ class AttributeValueController extends Controller
 {
 
 
-    public function indexPlaces(Request $request)
+    public function index()
+    {
+        
+        $attributeValues = AttributeValue::all();
+
+        if ($attributeValues->isEmpty()) {
+            return response()->json(['message' => 'No attribute values found', 'code' => 204], 204);
+        }
+        
+        return new AttributeValueCollection($attributeValues);
+    }
+
+
+    public function getByAttribute(Request $request)
     {
         $attributeId = $request->input('attribute_id');
 
-        if ($attributeId) {
-            $attribute = Attribute::find($attributeId);
-
-
-            if ($attribute->value_type !== 'PLACE') {
-                return response()->json(['message' => 'Attribute is not of type PLACE', 'code' => 400], 400);
-            }
-
-            $attributeValues = AttributeValue::where('attribute_id', $attributeId)->get();
-        } else {
-            $attributeValues = AttributeValue::all();
+        if (!$attributeId) {
+            return response()->json(['message' => 'Should be specified attributeId', 'code' => 400], 400);
         }
 
+        $attribute = Attribute::find($attributeId);
+
+
+        // if ($attribute->value_type !== 'PLACE' || !$attribute) {
+        //     return response()->json(['message' => 'Attribute is not of type PLACE', 'code' => 400], 400);
+        // }
+
+        $attributeValues = AttributeValue::where('attribute_id', $attributeId)->get();
 
         if ($attributeValues->isEmpty()) {
             return response()->json(['message' => 'No attribute values found', 'code' => 204], 204);
@@ -41,15 +53,14 @@ class AttributeValueController extends Controller
         return new AttributeValueCollection($attributeValues);
     }
 
-    public function index(Request $request)
+    public function getByProduct(Request $request)
     {
         $productId = $request->input('product_id');
         
-        if($productId){
-            $attributeValues = AttributeValue::where('product_id', $productId)->get();
-        } else{
-            $attributeValues = AttributeValue::all();
-        }
+        if(!$productId){
+            return response()->json(['message' => 'Product not found', 'code' => 400], 400);
+        } 
+        $attributeValues = AttributeValue::where('product_id', $productId)->get();
 
         if ($attributeValues->isEmpty()) {
             return response()->json(['message' => 'No attribute values found', 'code' => 204], 204);
@@ -58,7 +69,8 @@ class AttributeValueController extends Controller
         return new AttributeValueCollection($attributeValues);
     }
 
-    public function indexAttributeProduct(Request $request)
+
+    public function getByAttributeProduct(Request $request)
     {
         $attributeId = $request->input('attribute_id');
         $productId = $request->input('product_id');
@@ -66,7 +78,6 @@ class AttributeValueController extends Controller
         if(!$attributeId || !$productId){
             return response()->json(['message' => 'Should specify product_id and attribute_id', 'code' => 400], 400);
         }
-
 
         $attributeValues = AttributeValue::where('product_id', $productId)
                                      ->where('attribute_id', $attributeId)
@@ -157,7 +168,7 @@ class AttributeValueController extends Controller
 
     }
 
-    public function updateValue($productId, $attributeValueData)
+    public function updateAttributeValuesFromProductController($productId, $attributeValueData)
     {
         // Проверка на существование записи AttributeValue
         $attributeValue = AttributeValue::where('product_id', $productId)
@@ -176,6 +187,23 @@ class AttributeValueController extends Controller
                 'attribute_id' => $attributeValueData['attribute_id'],
                 'value' => $attributeValueData['value'],
             ]);
+        }
+    }
+
+    public function createAttributeValuesFromProductController($productId, array $attributeValues)
+    {
+        foreach ($attributeValues as $value) {
+            // Проверяем, что данные корректны
+            if (isset($value['attribute_id'], $value['value'])) {
+                AttributeValue::create([
+                    'product_id' => $productId,
+                    'attribute_id' => $value['attribute_id'],
+                    'value' => $value['value'],
+                ]);
+            } else {
+                // Вы можете добавить обработку ошибок или пропустить некорректные данные
+                \Log::warning('Invalid attribute value data', ['data' => $value]);
+            }
         }
     }
 

@@ -18,6 +18,29 @@ class SelfHarvestingController extends Controller
         
     }
 
+    public function getUserSelfHarvestings($userId)
+    {
+        // Найти пользователя по ID
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found', 'code' => 404], 404);
+        }
+
+        // Получить привязанные записи SelfHarvesting
+        $selfHarvestings = $user->selfHarvestingsVisits()->get();
+
+        if ($selfHarvestings->isEmpty()) {
+            return response()->json(['message' => 'No SelfHarvesting records found for this user', 'code' => 404], 404);
+        }
+
+        return response()->json([
+            'message' => 'SelfHarvesting records retrieved successfully',
+            'data' => $selfHarvestings,
+            'code' => 200,
+        ], 200);
+    }
+
     public function store(Request $request)
     {
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {

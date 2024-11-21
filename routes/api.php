@@ -21,14 +21,13 @@ Route::get('/user', function (Request $request) {
 
 Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], function () {
     Route::get('users', [UserController::class, 'index']);
-    Route::get('users/role/{role}', 'UserController@index_specified');
     Route::get('users/farmer', [UserController::class, 'getFarmerByProductId']);
     Route::post('users/create', [UserController::class, 'store'])->middleware('auth:sanctum');
     Route::get('users/{id}', [UserController::class, 'show']);
     Route::put('users/{id}', [UserController::class, 'update'])->middleware('auth:sanctum');
-    Route::patch('users/{id}', [UserController::class, 'update']);
+    Route::patch('users/{id}', [UserController::class, 'update'])->middleware('auth:sanctum');
     Route::delete('users/{id}', [UserController::class, 'delete'])->middleware('auth:sanctum');
-    Route::get('/farmers', [UserController::class, 'getUsersWithProducts']);
+    Route::get('/farmers', [UserController::class, 'getFarmers']);
 
 
     Route::get('products', [ProductController::class, 'index']);
@@ -36,9 +35,9 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::post('products/create', [ProductController::class, 'store'])->middleware('auth:sanctum');
     Route::get('/farmer/{farmerId}/products', [ProductController::class, 'getProductsByFarmer']);
     Route::get('products/{id}', [ProductController::class, 'show']);
-    Route::put('products/', [ProductController::class, 'update'])->middleware('auth:sanctum');;
-    Route::patch('products/', [ProductController::class, 'update']);
-    Route::delete('products/{id}', [ProductController::class, 'destroy']);
+    Route::put('products/', [ProductController::class, 'update'])->middleware('auth:sanctum');
+    Route::patch('products/', [ProductController::class, 'update'])->middleware('auth:sanctum');
+    Route::delete('products/{id}', [ProductController::class, 'destroy'])->middleware('auth:sanctum');
 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/filter', [CategoryController::class, 'filter']);
@@ -61,7 +60,8 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::delete('attributes/{id}', [AttributeController::class, 'destroy']);
 
     Route::get('attribute_values', [AttributeValueController::class, 'index']);
-    Route::get('attribute_values/places', [AttributeValueController::class, 'indexPlaces']);
+    Route::get('attribute_values/product', [AttributeValueController::class, 'getByProduct']);
+    Route::get('attribute_values/attribute', [AttributeValueController::class, 'getByAttribute']); // changes
     Route::post('attribute_values/create', [AttributeValueController::class, 'store']);
     Route::get('attribute_values/{id}', [AttributeValueController::class, 'show']);
     Route::put('attribute_values/{id}', [AttributeValueController::class, 'update']);
@@ -88,6 +88,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::get('SelfHarvesting/{id}', [SelfHarvestingController::class, 'show']);
     Route::put('SelfHarvesting/{id}', [SelfHarvestingController::class, 'update']);
     Route::patch('SelfHarvesting/{id}', [SelfHarvestingController::class, 'update']);
+    Route::post('/users/attach-self-harvesting', [UserController::class, 'attachSelfHarvesting'])->middleware('auth:sanctum');
     Route::delete('SelfHarvesting/{id}', [SelfHarvestingController::class, 'destroy']);
 
     Route::get('Reviews', [ReviewController::class, 'index']);

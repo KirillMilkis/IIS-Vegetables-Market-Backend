@@ -115,21 +115,21 @@ class ProductController extends Controller
                 if ($attribute && $attribute->value_type === 'DATE') {
                     if (isset($data['value']) && is_array($data['value'])) {
                         $value = $data['value'];  // Значение, с которым будет сравнение
-                
-                        $query->whereHas('attribute_values', function ($q) use ($attributeId, $value, ) {
+                        
+                        $query->whereHas('attribute_values', function ($q) use ($attributeId, $value) {
                             // Преобразуем значение из базы данных и входное значение в формат YYYY-MM-DD для корректного сравнения
                             $q->where('attribute_id', $attributeId)
-                              ->whereRaw('STR_TO_DATE(value, "%d-%m-%Y") >= ?', [$value]);  // Преобразование строки в дату и сравнение
+                            ->whereRaw('STR_TO_DATE(value, "%Y-%m-%d") >= ?', [$date]);  // Преобразование строки в дату и сравнение
                         });
                     }
                 }
 
                 if ($attribute && $attribute->value_type === 'QUANTITY') {
                     if (isset($data['value'])) {
-                        $value = data['value'];
+                        $value = $data['value'];
                         $query->whereHas('attribute_values', function($q) use ($attributeId, $value) {
                             $q->where('attribute_id', $attributeId)
-                            ->where('value', '>=', $value);
+                            ->whereBetween('value', [$value, 100000000]);
                         });
                     }
                 }
@@ -167,8 +167,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $userInitiator = Auth::user();
-        // $farmerId = $userInitiator['role'];
+        $authUser = Auth::user();
 
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
@@ -195,7 +194,6 @@ class ProductController extends Controller
         }
 
         $attributes = $category->category_attributes()
-        ->where('is_required', true)
         ->with('attribute')  // Eager load the Attribute model
         ->get()
         ->pluck('attribute');  // Get only the related Attribute models
@@ -210,27 +208,35 @@ class ProductController extends Controller
         }
     
         // Проверяем, что для каждого обязательного атрибута есть значение
-        foreach ($attributes as $attribute) {
-            $value = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
-            if (!$value || empty($value['value'])) {
+        foreach ($attributes as $categoryAttribute) {
+            $attribute = $categoryAttribute->attribute; // Достаём модель Attribute
+            $isRequired = $categoryAttribute->is_required; // Достаём флаг обязательности из category_attribute
+        
+            $attributeValue = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
+            
+            if (!$attributeValue){
+                return response()->json([
+                    'message' => "All attributes Value must be sent, but may have value null",
+                    'code' => 400
+                ], 400);
+            }
+            // Если атрибут обязательный и значение отсутствует или пустое, возвращаем ошибку
+            if ($isRequired &&  empty($attributeValue['value'])) {
                 return response()->json([
                     'message' => "Value for attribute {$attribute->name} is required",
                     'code' => 400
                 ], 400);
             }
+
+            
         }
     
         // Создаем продукт
         $product = Product::create($input);
     
         // Создаем записи в таблице AttributeValue
-        foreach ($attributeValues as $value) {
-            $product->attribute_values()->create([
-                'attribute_id' => $value['attribute_id'],
-                'value' => $value['value'],
-                'product_id' => $product->id,
-            ]);
-        }
+        app('App\Http\Controllers\AttributeValueController')
+        ->createAttributeValuesFromProductController($product->id, $attributeValues);
 
 
         return response()->json([
@@ -254,10 +260,10 @@ class ProductController extends Controller
 
     public function update(Request $request)
     {
-        $userInitiator = Auth::user();
+        $authUser = Auth::user();
 
         // Поиск продукта
-        $product = Product::find($request->id);
+        $product = Product::find($request->route('id'));
 
         if (!$product) {
             return response()->json([
@@ -267,7 +273,7 @@ class ProductController extends Controller
         }
 
         // Проверка прав доступа
-        if ($product->farmer_id != $userInitiator->id) {
+        if ($product->farmer_id != $authUser->id) {
             return response()->json([
                 'message' => "You don't have access to change other user's products",
                 'code' => 403,
@@ -309,9 +315,26 @@ class ProductController extends Controller
 
         // Обновление значений атрибутов
         $attributeValues = $request->input('attribute_values', []);
+
+        $existingAttributes = $product->attribute_values->pluck('attribute_id')->toArray();
+
+        // Проверяем, что все существующие атрибуты продукта имеют переданные значения
+        $passedAttributeIds = collect($attributeValues)->pluck('attribute_id')->toArray();
+        $missingAttributes = array_diff($existingAttributes, $passedAttributeIds);
+
+        if (!empty($missingAttributes)) {
+            return response()->json([
+                'message' => 'Not all attribute values are provided for existing attributes',
+                'missing_attributes' => $missingAttributes,
+                'code' => 400
+            ], 400);
+        }
+
         foreach ($attributeValues as $attributeValue) {
             // Вызов метода AttributeValueController
-            app('App\Http\Controllers\AttributeValueController')->updateValue($product->id, $attributeValue);
+            if($attributeValue)
+            app('App\Http\Controllers\AttributeValueController')
+            ->updateAttributeValuesFromProductController($product->id, $attributeValue);
         }
 
         return response()->json([
