@@ -8,6 +8,8 @@ use App\Http\Resources\SelfHarvestingCollection;
 use App\Http\Resources\SelfHarvestingResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Models\User; 
+use App\Models\Product; 
 
 class SelfHarvestingController extends Controller
 {
@@ -31,7 +33,7 @@ class SelfHarvestingController extends Controller
         $selfHarvestings = $user->selfHarvestingsVisits()->get();
 
         if ($selfHarvestings->isEmpty()) {
-            return response()->json(['message' => 'No SelfHarvesting records found for this user', 'code' => 404], 404);
+            return response()->json(['message' => 'No SelfHarvesting records found for this user', 'code' => 204], 204);
         }
 
         return response()->json([
@@ -40,6 +42,31 @@ class SelfHarvestingController extends Controller
             'code' => 200,
         ], 200);
     }
+
+
+    public function getProductSelfHarvestings($productId)
+    {
+        // Найти пользователя по ID
+        $product = Product::find($productId);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found', 'code' => 404], 404);
+        }
+
+        // Получить привязанные записи SelfHarvesting
+        $selfHarvestings = $product->self_harvestings()->get();
+
+        if ($selfHarvestings->isEmpty()) {
+            return response()->json(['message' => 'No SelfHarvesting records found for this product', 'code' => 204], 204);
+        }
+
+        return response()->json([
+            'message' => 'SelfHarvesting records retrieved successfully',
+            'data' => $selfHarvestings,
+            'code' => 200,
+        ], 200);
+    }
+    
 
     public function store(Request $request)
     {

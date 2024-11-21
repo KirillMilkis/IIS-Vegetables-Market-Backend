@@ -204,6 +204,35 @@ class UserController extends Controller
         ], 200);
     }
 
+    public function detachSelfHarvesting(Request $request)
+    {
+        // Найти аутентифицированного пользователя
+        $authUser = Auth::user(); 
+
+        // Получить идентификатор SelfHarvesting из запроса
+        $selfHarvestingId = $request->input('self_harvesting_id');
+
+        // Проверить, что идентификатор передан
+        if (empty($selfHarvestingId)) {
+            return response()->json(['message' => 'Invalid or missing self_harvesting_id', 'code' => 400], 400);
+        }
+
+        // Проверить существование SelfHarvesting по переданному ID
+        $selfHarvestingExists = SelfHarvesting::where('id', $selfHarvestingId)->exists();
+
+        if (!$selfHarvestingExists) {
+            return response()->json(['message' => 'SelfHarvesting not found', 'code' => 404], 404);
+        }
+
+        // Удалить связь SelfHarvesting с пользователем
+        $authUser->selfHarvestingsVisits()->detach($selfHarvestingId);
+
+        return response()->json([
+            'message' => 'SelfHarvesting(s) detached successfully',
+            'code' => 200,
+        ], 200);
+    }
+
     /**
      * Remove the specified resource from storage.
      */

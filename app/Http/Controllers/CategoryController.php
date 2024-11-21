@@ -11,20 +11,24 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth; 
 use App\Models\User; 
+use Illuminate\Support\Facades\Log;
+use App\Models\CategoryAttribute; 
 
 class CategoryController extends Controller
 {
 
-    public function index(Request $request)
+    public function index()
+    {
+        $categories = Category::all();
+
+        return new CategoryCollection($categories);
+    }
+
+    public function filter(Request $request)
     {
         $attributes = $request->input('attributes_id', []); // Массив идентификаторов атрибутов
         $search = $request->input('name_like');         // Поисковый запрос
         $parentId = $request->input('parent_id');        // parentId
-
-        if (empty($attributes) && empty($search) && empty($parentId)) {
-            $categories = Category::all()->where('status', 'APPROVED'); // Все категории
-            return new CategoryCollection($categories);
-        }
 
         $query = Category::query();
         $query->where('status', 'APPROVED');
@@ -61,7 +65,7 @@ class CategoryController extends Controller
 
     }
 
-    public function indexToApprove()
+    public function getToApprove()
     {
         
         $user_initator = Auth::user();
@@ -179,8 +183,7 @@ class CategoryController extends Controller
         } else {
 
             $category = Category::create($input);
-            $category->setAttribute('status', 'PROCESS');
-            $category->setAttribute('is_final', false);
+            $category->is_final = false;
 
             if(!$category){
                 return response()->json(['message' => 'Category not created',
@@ -203,23 +206,31 @@ class CategoryController extends Controller
         $category->save(); 
 
         
-        if ($request->has('attributes') && is_array($request->attributes)) {
-           
-            $attributeIds = collect($request->attributes)->pluck('id')->toArray();
-    
-        // Loop through each attribute to attach it with additional pivot data
-            foreach ($request->attributes as $attribute) {
-                $dataToAttach = [
+        if ($request->input('attributes')) {
+            $attributesData = $request->input('attributes');
+        
+            // Проверяем, что каждый атрибут содержит необходимые данные
+            foreach ($attributesData as $attribute) {
+                if (!isset($attribute['id'])) {
+                    return response()->json(['message' => 'Each attribute must have an id', 'code' => 400], 400);
+                }
+            }
+        
+            // Удаляем существующие связи для текущей категории, если требуется
+            CategoryAttribute::where('category_id', $category->id)->delete();
+        
+            // Создаем новые записи в `category_attributes`
+            foreach ($attributesData as $attribute) {
+                CategoryAttribute::create([
                     'category_id' => $category->id,
                     'attribute_id' => $attribute['id'],
-                    // You can add other pivot columns here like 'is_required'
-                    'is_required' => $attribute['is_required'] ?? false, // Default value is false if not provided
-                ];
-
-            // Attach the attribute to the category using the pivot table
-            $category->attributes()->attach($attribute['id'], $dataToAttach);
-    }
+                    'is_required' => $attribute['required'] ?? false, // Значение по умолчанию — false
+                ]);
+            }
         }
+        
+
+        $category->save(); 
 
 
         return response()->json(['message' => 'Category created',
@@ -243,13 +254,21 @@ class CategoryController extends Controller
 
     public function update(Request $request)
     {
-        $category = Category::find($request->id);
-        $user_initator = Auth::user();
+        $category = Category::find($request->route('id'));
+        $userAuth = Auth::user();
+    
+        Log::info('Full request:', $request->all());
 
-        if($user_initator['role'] != 'moderator'){
-            return response()->json(['message' => 'You dont have access with your role'], 403);
+
+        // Проверяем, что пользователь аутентифицирован
+        if (!$userAuth) {
+            return response()->json(['message' => 'User not authenticated', 'code' => 401], 401);
         }
-
+    
+        // Проверяем роль пользователя
+        if ($userAuth['role'] != 'moderator') {
+            return response()->json(['message' => 'You dont have access with your role', 'code' => 403], 403);
+        }
 
         if (!$category) {
             return response()->json(['message' => 'Category not found',
@@ -258,9 +277,6 @@ class CategoryController extends Controller
         }
 
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
-            if ($value === null) {
-                return []; 
-            }
             return [Str::snake($key) => $value];
         })->toArray();
 
@@ -273,10 +289,32 @@ class CategoryController extends Controller
                 'code' => 400]);
         }
 
+        CategoryAttribute::where('category_id', $category->id)->delete();
         if ($category->update($input)) {
-            if (isset($request->attributes_id)) {
-                $category->attributes()->sync($request->attributes_id);
+            // Если были переданы атрибуты для синхронизации
+            if ($request->input('attributes')) {
+                $attributesData = $request->input('attributes');
+                // Проверяем, что каждый атрибут содержит необходимые данные
+                foreach ($attributesData as $attribute) {
+                    Log::info('Popal v 1 ');
+                    if (!isset($attribute['id'])) {
+                        return response()->json(['message' => 'Each attribute must have an id', 'code' => 400], 400);
+                    }
+                }
+            
+                // Удаляем существующие связи для текущей категории, если требуется
+            
+                // Создаем новые записи в `category_attributes`
+                foreach ($attributesData as $attribute) {
+                    Log::info('Popal v 2 ');
+                    CategoryAttribute::create([
+                        'category_id' => $category->id,
+                        'attribute_id' => $attribute['id'],
+                        'is_required' => $attribute['required'] ?? false, // Значение по умолчанию — false
+                    ]);
+                }
             }
+            
 
             return response()->json(['message' => 'Category updated',
                 'code' => 200],
@@ -312,6 +350,31 @@ class CategoryController extends Controller
                 'code' => 500],
                 500);
         }
+    }
+
+    public function getDescendantCategoryIds($categoryId)
+    {
+        $categoryIds = [$categoryId];
+        $childCategories = Category::where('parent_id', $categoryId)->get();
+
+        foreach ($childCategories as $childCategory) {
+            $categoryIds = array_merge($categoryIds, $this->getDescendantCategoryIds($childCategory->id));
+        }
+
+        return $categoryIds;
+    }
+
+    public function getParentsCategoryIds($categoryId)
+    {
+        $categoryIds = [];
+        $category = Category::find($categoryId);
+
+        while ($category) {
+            $categoryIds[] = $category->id;
+            $category = $category->parent_id ? Category::find($category->parent_id) : null;
+        }
+
+        return $categoryIds;
     }
 
     private function validator_create(array $data)

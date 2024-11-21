@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->integer('quantity');
             $table->enum('quantity_type', ['KG', 'PIECE']);
+            $table->enum('status', ['UNORDERED', 'UNCONFIRMED', 'CONFIRMED', 'DELIVERED']);
             $table->decimal('price', 10, 2);
             $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');

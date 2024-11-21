@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('description', 100);
             $table->string('address', 100);
             $table->timestamp('order_date');
-            $table->enum('status', ['UNCONFIRMED', 'CONFIRMED', 'SHIPPED', 'DELIVERED']);
+            $table->enum('status', ['UNORDERED','ORDERED']);
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
         });

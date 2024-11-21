@@ -132,9 +132,9 @@ class AttributeValueController extends Controller
         return new AttributeValueResource($attributeValue);
     }
 
-    public function update(Request $request){
+    public function update(Request $request, $id){
 
-        $attributeValue = AttributeValue::find($request->id);
+        $attributeValue = AttributeValue::find($id);
 
         if (!$attributeValue) {
             return response()->json(['message' => 'Category not found',
@@ -146,7 +146,7 @@ class AttributeValueController extends Controller
             return [Str::snake($key) => $value];
         })->toArray();
 
-        $validator = $this->validator_create($input);
+        $validator = $this->validator_update($input);
 
         if ($validator->fails()) {
             return response()->json([
@@ -235,6 +235,15 @@ class AttributeValueController extends Controller
             'attribute_id' => 'required|integer|exists:attributes,id',
             'product_id' => 'required|integer|exists:products,id',
             'value' => 'required|string|max:50',
+        ]);
+    }
+
+    private function validator_update($input)
+    {
+        return Validator::make($input, [
+            'attribute_id' => 'nullable|integer|exists:attributes,id',
+            'product_id' => 'nullable|integer|exists:products,id',
+            'value' => 'nullable|string|max:50',
         ]);
     }
 

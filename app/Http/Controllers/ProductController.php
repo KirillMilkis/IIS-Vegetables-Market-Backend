@@ -30,7 +30,8 @@ class ProductController extends Controller
                 return response()->json(['message' => 'Category not found', 'code' => 404], 404);
             }
 
-            $categoryIds = $this->getDescendantCategoryIds($categoryId);
+            $categoryIds = app('App\Http\Controllers\CategoryController')
+            ->getDescendantCategoryIds($categoryId);
             $query->whereIn('category_id', $categoryIds);
         } 
 
@@ -72,7 +73,8 @@ class ProductController extends Controller
         $search = $request->input('name_like');
 
         if ($categoryId) {
-            $categoryIds = $this->getDescendantCategoryIds($categoryId);
+            $categoryIds = app('App\Http\Controllers\CategoryController')
+            ->getDescendantCategoryIds($categoryId);
             $query->whereIn('category_id', $categoryIds);
         }
 
@@ -152,17 +154,7 @@ class ProductController extends Controller
     }
 
 
-    private function getDescendantCategoryIds($categoryId)
-    {
-        $categoryIds = [$categoryId];
-        $childCategories = Category::where('parent_id', $categoryId)->get();
-
-        foreach ($childCategories as $childCategory) {
-            $categoryIds = array_merge($categoryIds, $this->getDescendantCategoryIds($childCategory->id));
-        }
-
-        return $categoryIds;
-    }
+   
 
 
     public function store(Request $request)

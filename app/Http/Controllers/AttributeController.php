@@ -12,7 +12,16 @@ use App\Models\Category;
 
 class AttributeController extends Controller
 {
-    public function index(Request $request)
+
+    public function index()
+    {
+        $attributes = Attribute::all();
+
+        return new AttributeCollection($attributes);
+
+    }
+
+    public function getByCategoryOrProduct(Request $request)
     {
         $categoryId = $request->input('category_id');
         $productId = $request->input('product_id');
@@ -66,23 +75,7 @@ class AttributeController extends Controller
         
     }
 
-
-
-    public function getParentsCategoryIds($categoryId)
-    {
-        $categoryIds = [];
-        $category = Category::find($categoryId);
-
-        while ($category) {
-            $categoryIds[] = $category->id;
-            $category = $category->parent_id ? Category::find($category->parent_id) : null;
-        }
-
-        return $categoryIds;
-    }
-
    
-
 
     public function store(Request $request)
     {
@@ -140,7 +133,7 @@ class AttributeController extends Controller
             return [Str::snake($key) => $value];
         })->toArray();
 
-        $validator = $this->validator_create($input);
+        $validator = $this->validator_update($input);
 
         if ($validator->fails()) {
             return response()->json([
@@ -190,6 +183,14 @@ class AttributeController extends Controller
         return Validator::make($data, [
             'name' => 'required|string|max:50',
             'value_type' => 'required|string|in:PRICE/KG, PRICE/PIECE, ORIGINAL PLACE, AVAILABLE, QUANTITY, EXPIRATION DATE, WEIGHT ',
+        ]);
+    }
+
+    private function validator_update(array $data)
+    {
+        return Validator::make($data, [
+            'name' => 'nullable|string|max:50',
+            'value_type' => 'nullable|string|in:PRICE/KG, PRICE/PIECE, ORIGINAL PLACE, AVAILABLE, QUANTITY, EXPIRATION DATE, WEIGHT ',
         ]);
     }
 

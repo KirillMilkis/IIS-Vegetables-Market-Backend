@@ -12,7 +12,7 @@ class CategoryAttribute extends Model
 
     protected $table = 'category_attribute';
     protected $primaryKey = 'id';
-    protected $fillable = ['is_required'];
+    protected $fillable = ['is_required', 'category_id', 'attribute_id'];
 
     public function attribute()
     {
