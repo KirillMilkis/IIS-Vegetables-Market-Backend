@@ -35,6 +35,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::get('products/filter', [ProductController::class, 'filter']);
     Route::post('products/create', [ProductController::class, 'store'])->middleware('auth:sanctum');
     Route::get('/farmer/{farmerId}/products', [ProductController::class, 'getProductsByFarmer']);
+    Route::get('/products/selfHarvesting/{selfHarvestingId}', [ProductController::class, 'getProductsBySelfHarvesting']);
     Route::get('products/{id}', [ProductController::class, 'show']);
     Route::put('products/{id}', [ProductController::class, 'update'])->middleware('auth:sanctum');
     Route::patch('products/{id}', [ProductController::class, 'update'])->middleware('auth:sanctum');
@@ -72,7 +73,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
 
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/user/{id}', [OrderController::class, 'getByUser'])->middleware('auth:sanctum');
-    Route::get('orders/user/{id}/unconfirmed', [OrderController::class, 'getUnorderedOrder'])->middleware('auth:sanctum');
+    Route::get('orders/user/{id}/unordered', [OrderController::class, 'getUnorderedOrder'])->middleware('auth:sanctum');
     Route::post('orders/create', [OrderController::class, 'store'])->middleware('auth:sanctum');
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::put('orders/{id}', [OrderController::class, 'update'])->middleware('auth:sanctum');
@@ -81,7 +82,8 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
 
     Route::get('orderProductQuantity', [OrderProductQuantityController::class, 'index']);
-    Route::get('orderProductQuantity/{orderId}', [OrderProductQuantityController::class, 'getByOrderId'])->middleware('auth:sanctum');
+    Route::get('orderProductQuantity/farmer/{farmerId}', [OrderProductQuantityController::class, 'getByFarmerId'])->middleware('auth:sanctum');
+    Route::get('orderProductQuantity/order/{orderId}', [OrderProductQuantityController::class, 'getByOrderId'])->middleware('auth:sanctum');
     Route::post('orderProductQuantity/create', [OrderProductQuantityController::class, 'store'])->middleware('auth:sanctum');
     Route::get('orderProductQuantity/{order_id}/{product_id}', [OrderProductQuantity::class, 'show']);
     Route::put('orderProductQuantity/{id}', [OrderProductQuantityController::class, 'update'])->middleware('auth:sanctum');

@@ -37,11 +37,14 @@ class SelfHarvestingController extends Controller
             return response()->json(['message' => 'No SelfHarvesting records found for this user', 'code' => 204], 204);
         }
 
-        return response()->json([
-            'message' => 'SelfHarvesting records retrieved successfully',
-            'data' => $selfHarvestings,
-            'code' => 200,
-        ], 200);
+        $selfHarvestings->map(function ($item) {
+            $item->product_name = $item->product->name;
+            return $item;
+        });
+
+        // Если записи найдены, возвращаем их
+        return new SelfHarvestingCollection($selfHarvestings);
+
     }
 
     public function getFarmerSelfHarvestings($userId)
@@ -56,15 +59,18 @@ class SelfHarvestingController extends Controller
         // Получить привязанные записи SelfHarvesting
         $selfHarvestings = $user->selfHarvestingsPlanned()->get();
 
-        if ($selfHarvestam6eharojeings->isEmpty()) {
+        if ($selfHarvestings->isEmpty()) {
             return response()->json(['message' => 'No SelfHarvesting records found for this user', 'code' => 204], 204);
         }
 
-        return response()->json([
-            'message' => 'SelfHarvesting records retrieved successfully',
-            'data' => $selfHarvestings,
-            'code' => 200,
-        ], 200);
+        $selfHarvestings->map(function ($item) {
+            $item->product_name = $item->product->name;
+            return $item;
+        });
+
+        // Если записи найдены, возвращаем их
+        return new SelfHarvestingCollection($selfHarvestings);
+
     }
 
 
@@ -83,11 +89,13 @@ class SelfHarvestingController extends Controller
             return response()->json(['message' => 'No SelfHarvesting records found for this product', 'code' => 204], 204);
         }
 
-        return response()->json([
-            'message' => 'SelfHarvesting records retrieved successfully',
-            'data' => $selfHarvestings,
-            'code' => 200,
-        ], 200);
+        $selfHarvestings->map(function ($item) {
+            $item->product_name = $item->product->name;
+            return $item;
+        });
+
+        // Если записи найдены, возвращаем их
+        return new SelfHarvestingCollection($selfHarvestings);
     }
     
 
@@ -134,6 +142,8 @@ class SelfHarvestingController extends Controller
                 'code' => 404],
                 404);
         }
+
+        $selfHarvesting->product_name = $selfHarvesting->product->name ?? null;
 
         return new SelfHarvestingResource($selfHarvesting);
     }

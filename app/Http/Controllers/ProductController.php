@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use App\Models\Attribute;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\SelfHarvesting;
 
 class ProductController extends Controller
 {
@@ -49,19 +50,38 @@ class ProductController extends Controller
     public function getProductsByFarmer($farmerId)
     {
     
-    $user = User::find($farmerId);
+        $user = User::find($farmerId);
 
-    if (!$user) {
-       
-        return response()->json(['message' => 'Farmer not found'], 404);
+        if (!$user) {
+        
+            return response()->json(['message' => 'Farmer not found'], 404);
+        }
+
+        
+        $products = $user->products; 
+
+        
+        return ProductResource::collection($products);
     }
 
-    
-    $products = $user->products; 
 
+    public function getProductsBySelfHarvesting($selfHarvestingId)
+    {
     
-    return ProductResource::collection($products);
+        $selfHarvesting = SelfHarvesting::find($selfHarvestingId);
+
+        if (!$selfHarvesting) {
+        
+            return response()->json(['message' => 'Farmer not found'], 404);
+        }
+
+        
+        $products = $selfHarvesting->product()->get(); 
+
+        
+        return ProductResource::collection($products);
     }
+
 
 
     public function filter(Request $request)

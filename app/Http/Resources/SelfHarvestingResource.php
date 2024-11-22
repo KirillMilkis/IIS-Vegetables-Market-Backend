@@ -20,6 +20,7 @@ class SelfHarvestingResource extends JsonResource
             'description' => $this->description,
             'dateTime' => $this->date_time,
             'location' => $this->location,
+            'productName' => $this->product_name
 
         ];
     }

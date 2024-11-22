@@ -40,8 +40,8 @@ class OrderController extends Controller
         if ($orders->isEmpty()) {
             return response()->json([
                 'message' => 'No orders found for this user',
-                'code' => 404
-            ], 404);
+                'code' => 204
+            ], 204);
         }
 
         // Возвращаем заказы в виде коллекции
@@ -207,6 +207,9 @@ class OrderController extends Controller
         $input = $request->only(['description', 'address']);
 
         // Проверка на обязательные поля
+        if(!isset($input['address'])){
+            return response()->json(['message' => 'Address is required'], 400);
+        }
         if (isset($input['address']) && empty($input['address'])) {
             return response()->json(['message' => 'Address is required'], 400);
         }
@@ -230,6 +233,7 @@ class OrderController extends Controller
     {
         $order = Order::find($id);
         $userAuth = Auth::user();
+        $input = $request->only(['address']);
 
         if($order->user_id != $userAuth['id']){
             return response()->json(['message' => 'You dont have access to orders from another users'], 403);
@@ -245,44 +249,30 @@ class OrderController extends Controller
         $order->status = 'ORDERED';
         
         // Если адрес был передан, обновляем его
-        if (!$address) {
-            return response()->json([
-                'message' => 'Address is required when user order an order',
-                'code' => 400
-            ], 400);
+        if (empty($order->address)) {
+            if(empty($input['address'])){
+                return response()->json([
+                    'message' => 'Address is required when user order an order',
+                    'code' => 400
+                ], 400);
+            }
+            $order->address = $input['address'];
         }
 
         // Сохраняем изменения в заказе
         $order->save();
 
         // Обновляем статус всех связанных записей в order_product_quantity на 'ordered'
-        $this->changeOrderProductQuantityStatusToOrdered($orderId);
+
+        $OPQcontroller = new OrderProductQuantityController();
+
+        // Call the function
+        $OPQcontroller->changeOrderProductQuantityStatusToUnconfirmed($order->id);
 
         return response()->json(['message' => 'Order status updated to ordered', 'code' => 200], 200);
     }
 
     // Функция для изменения статуса всех order_product_quantity на 'ordered'
-    public function changeOrderProductQuantityStatusToOrdered($orderId)
-    {
-        // Находим заказ по ID
-        $order = Order::find($orderId);
-
-        // Если заказ не найден
-        if (!$order) {
-            return response()->json(['message' => 'Order not found', 'code' => 404], 404);
-        }
-
-        // Обновляем статус всех связанных записей в order_product_quantity на 'ordered'
-        $orderProductQuantities = $order->orderProductQuantities; // Предполагаем, что связь с order_product_quantity установлена
-
-        foreach ($orderProductQuantities as $orderProductQuantity) {
-            // Меняем статус на 'ordered'
-            $orderProductQuantity->status = 'UNCONFIRMED';
-            $orderProductQuantity->save(); // Сохраняем изменения
-        }
-
-        return response()->json(['message' => 'Order product quantities status updated to ordered', 'code' => 200], 200);
-    }
     
     public function destroy($id)
     {

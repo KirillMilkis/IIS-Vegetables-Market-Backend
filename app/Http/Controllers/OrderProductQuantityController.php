@@ -38,23 +38,48 @@ class OrderProductQuantityController extends Controller
             ], 404);
         }
 
-    // Если записи найдены, возвращаем их
-    return response()->json([
-        'message' => 'Products found',
-        'data' => $orderProductQuantities->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'product_id' => $item->product_id,
-                'product_name' => $item->product->name, // Название продукта
-                'quantity' => $item->quantity,
-                'price' => $item->price,
-                'order_id' => $item->order_id,
-            ];
-        }),
-        'code' => 200
-    ], 200);
+        $orderProductQuantities->map(function ($item) {
+            $item->product_name = $item->product->name; // Add the product name
+            return $item;
+        });
+
+        // Если записи найдены, возвращаем их
+            return new OrderProductQuantityCollection($orderProductQuantities);
     }
 
+
+    public function getByFarmerId($farmerId)
+    {
+        // Get all product IDs owned by the user (farmer)
+        $authUser = Auth::user();
+        if(empty($farmerId)){
+            $farmerId = $authUser['id'];
+        }
+
+        $userProductIds = Product::where('farmer_id', $farmerId)->pluck('id');
+
+        // Fetch OrderProductQuantities linked to the user's products
+        $orderProductQuantities = OrderProductQuantity::whereIn('product_id', $userProductIds)
+            ->with('product') // Load the related Product model
+            ->get();
+
+        // If no records are found, return an error
+        if ($orderProductQuantities->isEmpty()) {
+            return response()->json([
+                'message' => 'No products found for this user',
+                'code' => 204
+            ], 204);
+        }
+
+        // Add product_name to each OrderProductQuantity
+        $orderProductQuantities->map(function ($item) {
+            $item->product_name = $item->product->name; // Add the product name
+            return $item;
+        });
+
+        // Return the filtered records
+        return new OrderProductQuantityCollection($orderProductQuantities);
+    }
 
     public function store(Request $request)
     {
@@ -132,21 +157,19 @@ class OrderProductQuantityController extends Controller
     }
     
     // Функция для обновления общей цены заказа
-   
-    
 
     public function show($order_id, $product_id)
     {
         $id = [$order_id, $product_id];
-        $order_product_quantity = OrderProductQuantity::find($id);
+        $orderProductQuantity = OrderProductQuantity::find($id);
 
-        if(!$order_product_quantity) {
+        if(!$orderProductQuantity) {
             return response()->json(['message' => 'OrderProductQuantity not found',
                 'code' => 404],
                 404);
         }
 
-        return new OrderProductQuantityResource($order_product_quantity);
+        return new OrderProductQuantityResource($orderProductQuantity);
     }
 
     public function update(Request $request, $id)
@@ -238,7 +261,7 @@ class OrderProductQuantityController extends Controller
     public function updateTotalPriceInOrder($order)
     {
         // Получаем все OrderProductQuantity для этого заказа
-        $orderProductQuantities = $order->order_product_quantities;
+        $orderProductQuantities = $order->orderProductQuantities;
     
         // Рассчитываем общую стоимость
         $totalPrice = $orderProductQuantities->sum('price');
@@ -248,17 +271,78 @@ class OrderProductQuantityController extends Controller
         $order->save();
     }
 
+    public function updateStatus($id)
+    {
+        // Find the OrderProductQuantity by its ID
+        $orderProductQuantity = OrderProductQuantity::find($id);
+
+        if (!$orderProductQuantity) {
+            return response()->json([
+                'message' => 'OrderProductQuantity not found',
+                'code' => 404,
+            ], 404);
+        }
+
+        // Define valid status transitions
+        $validTransitions = [
+            'UNCONFIRMED' => 'CONFIRMED',
+            'CONFIRMED' => 'SHIPPED',
+        ];
+
+        $currentStatus = $orderProductQuantity->status;
+
+        // Check if the current status has a valid transition
+        if (!isset($validTransitions[$currentStatus])) {
+            return response()->json([
+                'message' => 'No valid transition for the current status',
+                'current_status' => $currentStatus,
+                'code' => 400,
+            ], 400);
+        }
+
+        // Update the status to the next state
+        $newStatus = $validTransitions[$currentStatus];
+        $orderProductQuantity->status = $newStatus;
+
+        if ($orderProductQuantity->save()) {
+            return response()->json([
+                'message' => 'Status updated successfully',
+                'new_status' => $newStatus,
+                'code' => 200,
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Failed to update status',
+                'code' => 500,
+            ], 500);
+        }
+    }
+
+
     public function destroy($id)
     {
-        $order_product_quantity = OrderProductQuantity::find($id);
+        $orderProductQuantity = OrderProductQuantity::find($id);
 
-        if(!$order_product_quantity) {
+        if(!$orderProductQuantity) {
             return response()->json(['message' => 'OrderProductQuantity not found',
                 'code' => 404],
                 404);
         }
 
-        if($order_product_quantity->delete()) {
+        $order = $orderProductQuantity->order; 
+
+        if($orderProductQuantity->delete()) {
+
+            $this->updateTotalPriceInOrder($order);
+
+            if ($order->orderProductQuantities->isEmpty()) {
+                $order->delete();
+                return response()->json([
+                    'message' => 'OrderProductQuantity deleted and order deleted (last item)',
+                    'code' => 200
+                ], 200);
+            }
+
             return response()->json(['message' => 'OrderProductQuantity deleted',
                 'code' => 200],
                 200);
@@ -267,6 +351,29 @@ class OrderProductQuantityController extends Controller
                 'code' => 500],
                 500);
         }
+    }
+
+
+    public function changeOrderProductQuantityStatusToUnconfirmed($orderId)
+    {
+        // Находим заказ по ID
+        $order = Order::find($orderId);
+
+        // Если заказ не найден
+        if (!$order) {
+            return response()->json(['message' => 'Order not found', 'code' => 404], 404);
+        }
+
+        // Обновляем статус всех связанных записей в order_product_quantity на 'ordered'
+        $orderProductQuantities = $order->orderProductQuantities; // Предполагаем, что связь с order_product_quantity установлена
+
+        foreach ($orderProductQuantities as $orderProductQuantity) {
+            // Меняем статус на 'ordered'
+            $orderProductQuantity->status = 'UNCONFIRMED';
+            $orderProductQuantity->save(); // Сохраняем изменения
+        }
+
+        return;
     }
 
 
