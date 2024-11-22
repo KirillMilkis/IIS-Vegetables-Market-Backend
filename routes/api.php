@@ -10,6 +10,7 @@ use App\Http\Controllers\AttributeValueController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SelfHarvestingController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\OrderProductQuantityController;
 use App\Models\OrderProductQuantity;
 use App\Models\CategoryAttribute;
 use App\Http\Controllers\AuthController;
@@ -61,7 +62,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::delete('attributes/{id}', [AttributeController::class, 'destroy'])->middleware('auth:sanctum');
 
     Route::get('attribute_values', [AttributeValueController::class, 'index']);
-    Route::get('attribute_values/product', [AttributeValueController::class, 'getByProduct']);
+    Route::get('attribute_values/product/{productId}', [AttributeValueController::class, 'getByProduct']);
     Route::get('attribute_values/attribute', [AttributeValueController::class, 'getByAttribute']); // changed route
     Route::post('attribute_values/create', [AttributeValueController::class, 'store'])->middleware('auth:sanctum');
     Route::get('attribute_values/{id}', [AttributeValueController::class, 'show']);
@@ -71,39 +72,42 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
 
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/user/{id}', [OrderController::class, 'getByUser'])->middleware('auth:sanctum');
-    Route::get('orders/user/{id}/unconfirmed', [OrderController::class, 'getUnconfirmedOrders'])->middleware('auth:sanctum');
-    Route::post('orders/create', [OrderController::class, 'store']);
+    Route::get('orders/user/{id}/unconfirmed', [OrderController::class, 'getUnorderedOrder'])->middleware('auth:sanctum');
+    Route::post('orders/create', [OrderController::class, 'store'])->middleware('auth:sanctum');
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::put('orders/{id}', [OrderController::class, 'update'])->middleware('auth:sanctum');
     Route::patch('orders/{id}', [OrderController::class, 'update'])->middleware('auth:sanctum');
     Route::put('orders/{id}/placeOrder', [OrderController::class, 'updateOrderStatusToOrdered'])->middleware('auth:sanctum');
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
 
-    Route::get('orderProductQuantity', [OrderProductQuantity::class, 'index']);
-    Route::get('orderProductQuantity/{orderId}', [OrderProductQuantity::class, 'getByOrderId'])->middleware('auth:sanctum');
-    Route::post('orderProductQuantity/create', [OrderProductQuantity::class, 'store'])->middleware('auth:sanctum');
+    Route::get('orderProductQuantity', [OrderProductQuantityController::class, 'index']);
+    Route::get('orderProductQuantity/{orderId}', [OrderProductQuantityController::class, 'getByOrderId'])->middleware('auth:sanctum');
+    Route::post('orderProductQuantity/create', [OrderProductQuantityController::class, 'store'])->middleware('auth:sanctum');
     Route::get('orderProductQuantity/{order_id}/{product_id}', [OrderProductQuantity::class, 'show']);
-    Route::put('orderProductQuantity/', [OrderProductQuantity::class, 'update'])->middleware('auth:sanctum');
-    Route::patch('orderProductQuantity/{order_id}/{product_id}', [OrderProductQuantity::class, 'update']);
-    Route::delete('orderProductQuantity/', [OrderProductQuantity::class, 'destroy'])->middleware('auth:sanctum');
+    Route::put('orderProductQuantity/{id}', [OrderProductQuantityController::class, 'update'])->middleware('auth:sanctum');
+    Route::patch('orderProductQuantity/{order_id}/{product_id}', [OrderProductQuantityController::class, 'update']);
+    Route::delete('orderProductQuantity/{id}', [OrderProductQuantityController::class, 'destroy'])->middleware('auth:sanctum');
 
     Route::get('SelfHarvesting/user/{userId}', [SelfHarvestingController::class, 'getUserSelfHarvestings'])->middleware('auth:sanctum');
     Route::get('SelfHarvesting/product/{productId}', [SelfHarvestingController::class, 'getProductSelfHarvestings'])->middleware('auth:sanctum');
+    Route::get('SelfHarvesting/farmer/{farmerId}', [SelfHarvestingController::class, 'getFarmerSelfHarvestings']);
     Route::get('SelfHarvesting', [SelfHarvestingController::class, 'index']);
-    Route::post('SelfHarvesting/create', [SelfHarvestingController::class, 'store']);
+    Route::post('SelfHarvesting/create', [SelfHarvestingController::class, 'store'])->middleware('auth:sanctum');
     Route::get('SelfHarvesting/{id}', [SelfHarvestingController::class, 'show']);
     Route::put('SelfHarvesting/{id}', [SelfHarvestingController::class, 'update']);
     Route::patch('SelfHarvesting/{id}', [SelfHarvestingController::class, 'update']);
     Route::post('/users/attach-self-harvesting', [UserController::class, 'attachSelfHarvesting'])->middleware('auth:sanctum');
     Route::post('/users/detach-self-harvesting', [UserController::class, 'detachSelfHarvesting'])->middleware('auth:sanctum');
-    Route::delete('SelfHarvesting/{id}', [SelfHarvestingController::class, 'destroy']);
+    Route::delete('SelfHarvesting/{id}', [SelfHarvestingController::class, 'destroy'])->middleware('auth:sanctum');
 
-    Route::get('Reviews', [ReviewController::class, 'index']);
-    Route::post('Reviews/create', [ReviewController::class, 'store']);
-    Route::get('Reviews/{id}', [ReviewController::class, 'show']);
-    Route::put('Reviews/{id}', [ReviewController::class, 'update']);
-    Route::patch('Reviews/{id}', [ReviewController::class, 'update']);
-    Route::delete('Reviews/{id}', [ReviewController::class, 'destroy']);
+    Route::get('reviews', [ReviewController::class, 'index']);
+    Route::get('reviews/product/{productId}', [ReviewController::class, 'getByProduct']);
+    Route::get('reviews/average/{productId}', [ReviewController::class, 'getAverageRating']);
+    Route::post('reviews/create', [ReviewController::class, 'store']);
+    Route::get('reviews/{id}', [ReviewController::class, 'show']);
+    Route::put('reviews/{id}', [ReviewController::class, 'update']);
+    Route::patch('reviews/{id}', [ReviewController::class, 'update']);
+    Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
 
 
     Route::post('/login', [AuthController::class, 'login']);

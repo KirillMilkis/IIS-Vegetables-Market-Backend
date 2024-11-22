@@ -8,12 +8,7 @@ class Review extends Model
 {
     protected $table = 'reviews';
     protected $primaryKey = 'id';
-    protected $fillable = ['user_id', 'product_id', 'rating', 'content'];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $fillable = ['username', 'product_id', 'rating', 'content'];
 
     public function product()
     {

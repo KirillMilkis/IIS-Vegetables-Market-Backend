@@ -8,6 +8,9 @@ use App\Http\Resources\OrderCollection;
 use App\Http\Resources\OrderResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+
 
 
 class OrderController extends Controller
@@ -62,7 +65,7 @@ class OrderController extends Controller
 
         // Получаем заказы со статусом "UNCONFIRMED" для указанного пользователя
         $orders = Order::where('user_id', $id)
-            ->where('status', 'UNCONFIRMED')
+            ->where('status', 'UNORDERED')
             ->get();
 
         // Проверяем, есть ли такие заказы
@@ -87,9 +90,42 @@ class OrderController extends Controller
         // Возвращаем заказы в виде коллекции
         return response()->json([
             'message' => 'Unconfirmed orders retrieved successfully',
-            'orders' => new OrderCollection($latestOrder),
+            'orders' => new OrderCollection(collect([$latestOrder])),
             'code' => 200
         ], 200);
+    }
+
+    public function getUnorderedOrderForAnotherController($id)
+    {
+        // Проверяем, существует ли пользователь с указанным ID
+        $user = User::find($id);
+        if (!$user) {
+            return null; // Возвращаем null, если пользователь не найден
+        }
+
+        // Получаем заказы со статусом "UNCONFIRMED" для указанного пользователя
+        $orders = Order::where('user_id', $id)
+            ->where('status', 'UNORDERED')
+            ->get();
+
+        // Проверяем, есть ли такие заказы
+        if ($orders->isEmpty()) {
+            return null; // Возвращаем null, если нет заказов
+        }
+
+        // Если заказов больше одного, удаляем все кроме первого
+        if ($orders->count() > 1) {
+            $ordersToDelete = $orders->slice(1); // Все, кроме самого последнего
+            foreach ($ordersToDelete as $order) {
+                $order->delete(); // Удаляем заказ
+            }
+        }
+
+        // Получаем последний оставшийся заказ
+        $latestOrder = $orders->first();
+
+        // Возвращаем только последний заказ
+        return $latestOrder; // Возвращаем сам заказ, а не ответ в формате JSON
     }
 
 
@@ -108,8 +144,10 @@ class OrderController extends Controller
         $input['user_id'] = $userAuth->id;
         $input['total_price'] = '0';
      
-        if($input['status'] != 'UNORDERED'){
-            return response()->json(['message' => 'Order while create must be unordered'], 403);
+        if(isset($input['status'])){
+            if( $input['status'] != 'UNORDERED') {
+                return response()->json(['message' => 'Order while create must be unordered'], 403);
+            }
         }
         if(!isset($input['status'])){
             $input['status'] = 'UNORDERED';
@@ -188,7 +226,7 @@ class OrderController extends Controller
         return response()->json(['message' => 'Order updated successfully', 'code' => 200], 200);
     }
 
-    public function updateOrderStatusToOrdered(Request $request)
+    public function updateOrderStatusToOrdered(Request $request, $id)
     {
         $order = Order::find($id);
         $userAuth = Auth::user();
@@ -239,7 +277,7 @@ class OrderController extends Controller
 
         foreach ($orderProductQuantities as $orderProductQuantity) {
             // Меняем статус на 'ordered'
-            $orderProductQuantity->status = 'ordered';
+            $orderProductQuantity->status = 'UNCONFIRMED';
             $orderProductQuantity->save(); // Сохраняем изменения
         }
 
@@ -270,9 +308,9 @@ class OrderController extends Controller
     public function validator_create($data) {
         return Validator::make($data, [
             'total_price' => 'required|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
-            'description' => 'string|max:100',
+            'description' => 'nullable|string|max:100',
             'address' => 'nullable|string|max:100',
-            'status' => 'required|string|max:50|in:UNCONFIRMED,CONFIRMED,SHIPPED,DELIVERED',
+            'status' => 'required|string|max:50|in:UNORDERED,UNCONFIRMED,CONFIRMED,SHIPPED,DELIVERED',
             'user_id' => 'required|integer|exists:users,id',
 
         ]);

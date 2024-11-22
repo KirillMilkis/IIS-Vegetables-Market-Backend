@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->decimal('total_price', 10, 2);
-            $table->string('description', 100);
-            $table->string('address', 100);
-            $table->timestamp('order_date');
+            $table->string('description', 100)->nullable();
+            $table->string('address', 100)->nullable();
+            $table->timestamp('order_date')->nullable();
             $table->enum('status', ['UNORDERED','ORDERED']);
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();

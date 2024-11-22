@@ -9,6 +9,7 @@ use App\Models\Attribute;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Models\Category;
+use App\Models\Product;
 
 class AttributeController extends Controller
 {
@@ -56,19 +57,39 @@ class AttributeController extends Controller
             return response()->json(['message' => 'No attributes found', 'code' => 204], 204);
         }
 
-        if ($categoryId) {
-            $attributes->each(function ($attribute) use ($categoryId) {
-                // Find the associated pivot record (category_attribute) that matches the given categoryId
-                $categoryAttribute = $attribute->attribute_categories->filter(function ($categoryAttribute) use ($categoryId) {
-                    return $categoryAttribute->category_id == $categoryId;
-                })->first(); // Get the first match (if any)
+        // if ($categoryId) {
+        //     $attributes->each(function ($attribute) use ($categoryId) {
+        //         // Find the associated pivot record (category_attribute) that matches the given categoryId
+        //         $categoryAttribute = $attribute->attribute_categories->filter(function ($categoryAttribute) use ($categoryId) {
+        //             return $categoryAttribute->category_id == $categoryId;
+        //         })->first(); // Get the first match (if any)
                 
-                if ($categoryAttribute) {
-                    // Dynamically attach 'is_required' to the attribute object from the specific category
-                    $attribute->is_required = $categoryAttribute->is_required;
-                }
-            });
-        }
+        //         if ($categoryAttribute) {
+        //             // Dynamically attach 'is_required' to the attribute object from the specific category
+        //             $attribute->is_required = $categoryAttribute->is_required;
+        //         }
+        //     });
+        // }
+
+        $attributes->each(function ($attribute) use ($categoryId, $productId) {
+            // Если указан category_id, берем его напрямую
+            if ($categoryId) {
+                $categoryAttribute = $attribute->attribute_categories->firstWhere('category_id', $categoryId);
+            } 
+            // Если указан product_id, берем категорию продукта
+            else if ($productId) {
+                $product = Product::find($productId);
+                $productCategory = $product->category->first();
+                $categoryAttribute = $attribute->attribute_categories->firstWhere('category_id', $productCategory->id);
+            }
+        
+            // Если найдено, добавляем флаг is_required
+            if ($categoryAttribute) {
+                $attribute->is_required = $categoryAttribute->is_required;
+            } else {
+                $attribute->is_required = false; // Если связи нет, по умолчанию false
+            }
+        });
 
 
         return new AttributeCollection($attributes);

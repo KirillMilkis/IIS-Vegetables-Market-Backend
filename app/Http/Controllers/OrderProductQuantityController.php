@@ -8,7 +8,12 @@ use App\Http\Resources\OrderProductQuantityCollection;
 use App\Http\Resources\OrderProductQuantityResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\OrderController;
+use App\Models\User;
+use App\Models\Product;
+use Illuminate\Support\Facades\Log;
+use App\Models\Order;
 
 class OrderProductQuantityController extends Controller
 {
@@ -21,19 +26,33 @@ class OrderProductQuantityController extends Controller
 
     public function getByOrderId($order_id)
     {
-        // Находим все записи, связанные с указанным order_id
-        $order_product_quantities = OrderProductQuantity::where('order_id', $order_id)->get();
+        $orderProductQuantities = OrderProductQuantity::where('order_id', $order_id)
+        ->with('product') // Подгружаем связанную модель Product
+        ->get();
 
         // Если записи не найдены, возвращаем ошибку
-        if ($order_product_quantities->isEmpty()) {
+        if ($orderProductQuantities->isEmpty()) {
             return response()->json([
                 'message' => 'No products found for this order',
                 'code' => 404
             ], 404);
         }
 
-        // Если записи найдены, возвращаем их
-        return new OrderProductQuantityCollection($order_product_quantities);
+    // Если записи найдены, возвращаем их
+    return response()->json([
+        'message' => 'Products found',
+        'data' => $orderProductQuantities->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product->name, // Название продукта
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+                'order_id' => $item->order_id,
+            ];
+        }),
+        'code' => 200
+    ], 200);
     }
 
 
@@ -56,7 +75,8 @@ class OrderProductQuantityController extends Controller
         }
     
         // Получаем заказ с указанным id
-        $order = $this->getUnorderedOrder($userAuth['id']);
+        $orderController = new OrderController(); // создаем экземпляр класса
+        $order = $orderController->getUnorderedOrderForAnotherController($userAuth['id']);
         if (!$order) {
             return response()->json([
                 'message' => 'Order not found or already confirmed',
@@ -65,7 +85,7 @@ class OrderProductQuantityController extends Controller
         }
     
         // Получаем информацию о продукте
-        $product = Product::find($input['id']);
+        $product = Product::find($input['product_id']);
         if (!$product) {
             return response()->json([
                 'message' => 'Product not found',
@@ -129,10 +149,11 @@ class OrderProductQuantityController extends Controller
         return new OrderProductQuantityResource($order_product_quantity);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
        // Находим OrderProductQuantity по id
-        $orderProductQuantity = OrderProductQuantity::find($request->id);
+        $orderProductQuantity = OrderProductQuantity::find($id);
+
 
         if (!$orderProductQuantity) {
             return response()->json([
@@ -166,7 +187,9 @@ class OrderProductQuantityController extends Controller
         // Сохраняем обновленную информацию
         if ($orderProductQuantity->save()) {
             // Пересчитываем total_price в заказе
-            $this->updateTotalPriceInOrder($orderProductQuantity->order_id);
+            $order = Order::find($orderProductQuantity->order_id);
+
+            $this->updateTotalPriceInOrder($order);
 
             return response()->json([
                 'message' => 'OrderProductQuantity quantity updated',
@@ -188,18 +211,22 @@ class OrderProductQuantityController extends Controller
         }
 
         // Получаем все атрибуты продукта
-        $attributeValues = $product->attributeValues;
+        $attributeValues = $product->attribute_values;
         $price = 0;
+
 
         // Ищем атрибут 'price' и рассчитываем цену в зависимости от quantity
         foreach ($attributeValues as $attributeValue) {
-            if ($attributeValue->attribute->name == 'price') {
+            Log::info("Processing attribute value: ", ['attribute_value' => $attributeValue->toArray()]);
+            if ($attributeValue->attribute->name == 'Price/kg' || $attributeValue->attribute->name == 'Price/piece') {
+    
                 // В зависимости от типа цены
                 if ($attributeValue->attribute->value_type == 'PRICE/PIECE') {
                     // Цена за штуку, используем значение из attribute_value как цену за штуку
                     $price = $attributeValue->value * $quantity;
                 } else if ($attributeValue->attribute->value_type == 'PRICE/KG') {
                     // Цена за килограмм, используем значение из attribute_value как цену за килограмм
+
                     $price = $attributeValue->value * $quantity;
                 }
             }
@@ -211,19 +238,18 @@ class OrderProductQuantityController extends Controller
     public function updateTotalPriceInOrder($order)
     {
         // Получаем все OrderProductQuantity для этого заказа
-        $orderProductQuantities = $order->orderProductQuantities;
+        $orderProductQuantities = $order->order_product_quantities;
     
         // Рассчитываем общую стоимость
         $totalPrice = $orderProductQuantities->sum('price');
     
         // Обновляем total_price в заказе
-        $order->total_cost = $totalPrice;
+        $order->total_price = $totalPrice;
         $order->save();
     }
 
-    public function destroy($order_id, $product_id)
+    public function destroy($id)
     {
-        $id = [$order_id, $product_id];
         $order_product_quantity = OrderProductQuantity::find($id);
 
         if(!$order_product_quantity) {

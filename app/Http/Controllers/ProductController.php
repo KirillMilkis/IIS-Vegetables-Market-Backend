@@ -186,9 +186,7 @@ class ProductController extends Controller
         }
 
         $attributes = $category->category_attributes()
-        ->with('attribute')  // Eager load the Attribute model
-        ->get()
-        ->pluck('attribute');  // Get only the related Attribute models
+        ->get();
 
         $attributeValues = $request->input('attribute_values');
 
@@ -206,12 +204,12 @@ class ProductController extends Controller
         
             $attributeValue = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
             
-            if (!$attributeValue){
-                return response()->json([
-                    'message' => "All attributes Value must be sent, but may have value null",
-                    'code' => 400
-                ], 400);
-            }
+            // if (!$attributeValue){
+            //     return response()->json([
+            //         'message' => "All attributes Value must be sent, but may have value null",
+            //         'code' => 400
+            //     ], 400);
+            // }
             // Если атрибут обязательный и значение отсутствует или пустое, возвращаем ошибку
             if ($isRequired &&  empty($attributeValue['value'])) {
                 return response()->json([

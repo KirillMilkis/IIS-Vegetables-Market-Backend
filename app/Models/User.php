@@ -26,11 +26,6 @@ class User extends Authenticatable
         return $this->hasMany(Product::class, 'farmer_id');
     }
 
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
-    }
-
     public function selfHarvestingsVisits()
     {
         return $this->belongsToMany(SelfHarvesting::class);
@@ -38,7 +33,7 @@ class User extends Authenticatable
 
     public function selfHarvestingsPlanned()
     {
-        return $this->hasMany(SelfHarvesting::class);
+        return $this->hasMany(SelfHarvesting::class, 'farmer_id');
     }
 
     

@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderProductQuantity extends Model
 {
-    protected $table = 'order_product_quantities';
+    protected $table = 'order_product_quantity';
     protected $primaryKey = 'id';
-    protected $fillable = ['order_id', 'product_id', 'quantity', 'status'];
+    protected $fillable = ['order_id', 'product_id', 'quantity', 'status', 'price'];
 
     public function product()
     {

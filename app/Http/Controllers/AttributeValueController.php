@@ -55,7 +55,7 @@ class AttributeValueController extends Controller
 
     public function getByProduct(Request $request)
     {
-        $productId = $request->input('product_id');
+        $productId = $request->route('productId');
         
         if(!$productId){
             return response()->json(['message' => 'Product not found', 'code' => 400], 400);

@@ -18,6 +18,27 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
+
+    public function getByProduct($productId)
+    {
+        $reviews = Review::where('product_id',$productId)->get();
+
+
+        return new ReviewCollection($reviews);
+    }
+
+    public function getAverageRating($productId)
+    {
+        $averageRating = Review::where('product_id', $productId)->avg('rating');
+
+        return response()->json([
+            'product_id' => $productId,
+            'average_rating' => round($averageRating, 2) // Round to 2 decimal places
+        ]);
+    }
+
+
+
     public function store(Request $request)
     {
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
@@ -114,7 +135,7 @@ class ReviewController extends Controller
 
     private function validator_create($input) {
         return Validator::make($input, [
-            'user_id' => 'required|integer|exists:users,id',
+            'username' => 'required|string',
             'product_id' => 'required|integer|exists:products,id',
             'rating' => 'required|integer|min:1|max:5',
             'content' => 'required|string|max:255',
