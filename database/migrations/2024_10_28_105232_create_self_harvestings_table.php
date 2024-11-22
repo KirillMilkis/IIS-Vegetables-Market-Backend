@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('self_harvestings', function (Blueprint $table) {
             $table->id();
             $table->string('name', 50);
-            $table->string('description', 100);
+            $table->string('description', 255);
             $table->timestamp('date_time');
             $table->string('location', 50);
             $table->unsignedBigInteger('farmer_id');

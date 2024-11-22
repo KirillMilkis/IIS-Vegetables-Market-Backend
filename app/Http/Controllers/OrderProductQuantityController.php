@@ -60,8 +60,11 @@ class OrderProductQuantityController extends Controller
 
         // Fetch OrderProductQuantities linked to the user's products
         $orderProductQuantities = OrderProductQuantity::whereIn('product_id', $userProductIds)
-            ->with('product') // Load the related Product model
-            ->get();
+        ->whereHas('order', function($query) {
+            $query->where('status', '!=', 'UNORDERED'); // Fetch orders not having 'UNORDERED' status
+        })
+        ->with('product') // Load the related Product model
+        ->get();
 
         // If no records are found, return an error
         if ($orderProductQuantities->isEmpty()) {
@@ -74,6 +77,8 @@ class OrderProductQuantityController extends Controller
         // Add product_name to each OrderProductQuantity
         $orderProductQuantities->map(function ($item) {
             $item->product_name = $item->product->name; // Add the product name
+            $item->address = $item->order->address;
+            $item->date_time = $item->order->order_date;
             return $item;
         });
 
@@ -119,7 +124,7 @@ class OrderProductQuantityController extends Controller
         }
     
         // Получаем атрибуты продукта через промежуточную таблицу
-        $attributeValues = $product->attributeValues;
+        $attributeValues = $product->attribute_values;
         $price = $this->calculateProductPrice($input['product_id'], $input['quantity']);
     
         // Проверяем, какой атрибут указывает на цену за килограмм или за штуку
@@ -130,6 +135,30 @@ class OrderProductQuantityController extends Controller
                 'code' => 400
             ]);
         }
+
+
+        $quantityAttribute = $attributeValues->first(function ($attributeValue) {
+            return $attributeValue->attribute && $attributeValue->attribute->name == 'Quantity';
+        });
+    
+        if (!$quantityAttribute) {
+            return response()->json([
+                'message' => 'Does not have quantity',
+                'code' => 400
+            ], 400);
+        }
+    
+        // Проверяем, достаточно ли количества для заказа
+        if ($quantityAttribute->value < $input['quantity']) {
+            return response()->json([
+                'message' => 'Insufficient quantity available',
+                'code' => 400
+            ], 400);
+        }
+    
+        // Обновляем quantity в attribute value (уменьшаем на заказанное количество)
+        $quantityAttribute->value -= $input['quantity'];
+        $quantityAttribute->save();
     
         // Обновляем данные в OrderProductQuantity
         $input['price'] = $price; // Цена для данного количества
@@ -177,7 +206,6 @@ class OrderProductQuantityController extends Controller
        // Находим OrderProductQuantity по id
         $orderProductQuantity = OrderProductQuantity::find($id);
 
-
         if (!$orderProductQuantity) {
             return response()->json([
                 'message' => 'OrderProductQuantity not found',
@@ -197,6 +225,51 @@ class OrderProductQuantityController extends Controller
                 'code' => 400
             ], 400);
         }
+
+
+        $previousQuantity = $orderProductQuantity->quantity;
+        $newQuantity = $input['quantity'];
+
+        // Найдем атрибут "Quantity" для данного продукта
+        $product = Product::find($orderProductQuantity->product_id);
+        $attributeValues = $product->attribute_values;
+
+        // Ищем атрибут 'Quantity'
+        $quantityAttribute = $attributeValues->first(function ($attributeValue) {
+            return $attributeValue->attribute && $attributeValue->attribute->name == 'Quantity';
+        });
+
+        if (!$quantityAttribute) {
+            return response()->json([
+                'message' => 'Product does not have a quantity attribute',
+                'code' => 400
+            ], 400);
+        }
+
+        // Если количество уменьшилось
+        if ($newQuantity < $previousQuantity) {
+            // Возвращаем разницу в attribute_value (увеличиваем количество)
+            $difference = $previousQuantity - $newQuantity;
+            $quantityAttribute->value += $difference;
+            $quantityAttribute->save(); // Сохраняем изменения
+        }
+
+        // Если количество увеличилось
+        if ($newQuantity > $previousQuantity) {
+            // Уменьшаем разницу в attribute_value (вычитаем количество)
+            $difference = $newQuantity - $previousQuantity;
+            if ($quantityAttribute->value < $difference) {
+                return response()->json([
+                    'message' => 'Not enough quantity in stock',
+                    'code' => 400
+                ], 400);
+            }
+            $quantityAttribute->value -= $difference;
+            $quantityAttribute->save(); // Сохраняем изменения
+        }
+
+        // Обновляем только quantity в OrderProductQuantity
+        $orderProductQuantity->quantity = $newQuantity;
 
         // Обновляем только quantity в OrderProductQuantity
         $orderProductQuantity->quantity = $input['quantity'];
@@ -330,6 +403,25 @@ class OrderProductQuantityController extends Controller
         }
 
         $order = $orderProductQuantity->order; 
+
+        $product = Product::find($orderProductQuantity->product_id);
+        $attributeValues = $product->attribute_values;
+    
+        // Ищем атрибут 'Quantity'
+        $quantityAttribute = $attributeValues->first(function ($attributeValue) {
+            return $attributeValue->attribute && $attributeValue->attribute->name == 'Quantity';
+        });
+    
+        if (!$quantityAttribute) {
+            return response()->json([
+                'message' => 'Product does not have a quantity attribute',
+                'code' => 400
+            ], 400);
+        }
+    
+        // Возвращаем количество в stock (увеличиваем на количество удаленного товара)
+        $quantityAttribute->value += $orderProductQuantity->quantity;
+        $quantityAttribute->save(); // Сохраняем изменения в stock
 
         if($orderProductQuantity->delete()) {
 

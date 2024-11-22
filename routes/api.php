@@ -87,6 +87,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::post('orderProductQuantity/create', [OrderProductQuantityController::class, 'store'])->middleware('auth:sanctum');
     Route::get('orderProductQuantity/{order_id}/{product_id}', [OrderProductQuantity::class, 'show']);
     Route::put('orderProductQuantity/{id}', [OrderProductQuantityController::class, 'update'])->middleware('auth:sanctum');
+    Route::put('orderProductQuantity/updateStatus/{id}', [OrderProductQuantityController::class, 'updateStatus'])->middleware('auth:sanctum');
     Route::patch('orderProductQuantity/{order_id}/{product_id}', [OrderProductQuantityController::class, 'update']);
     Route::delete('orderProductQuantity/{id}', [OrderProductQuantityController::class, 'destroy'])->middleware('auth:sanctum');
 

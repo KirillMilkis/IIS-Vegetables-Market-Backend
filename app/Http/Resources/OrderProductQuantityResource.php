@@ -22,7 +22,9 @@ class OrderProductQuantityResource extends JsonResource
             'quantityType' => $this->quantity_type,
             'price' => $this->price,
             'status' => $this->status,
-            'productName' => $this->product_name
+            'productName' => $this->product_name,
+            'address' => $this->address,
+            'dateTime' => $this->date_time
         ];
     }
 }

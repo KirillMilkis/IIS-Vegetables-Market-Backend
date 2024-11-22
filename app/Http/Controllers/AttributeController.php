@@ -57,20 +57,6 @@ class AttributeController extends Controller
             return response()->json(['message' => 'No attributes found', 'code' => 204], 204);
         }
 
-        // if ($categoryId) {
-        //     $attributes->each(function ($attribute) use ($categoryId) {
-        //         // Find the associated pivot record (category_attribute) that matches the given categoryId
-        //         $categoryAttribute = $attribute->attribute_categories->filter(function ($categoryAttribute) use ($categoryId) {
-        //             return $categoryAttribute->category_id == $categoryId;
-        //         })->first(); // Get the first match (if any)
-                
-        //         if ($categoryAttribute) {
-        //             // Dynamically attach 'is_required' to the attribute object from the specific category
-        //             $attribute->is_required = $categoryAttribute->is_required;
-        //         }
-        //     });
-        // }
-
         $attributes->each(function ($attribute) use ($categoryId, $productId) {
             // Если указан category_id, берем его напрямую
             if ($categoryId) {

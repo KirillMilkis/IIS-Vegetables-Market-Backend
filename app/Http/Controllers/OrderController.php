@@ -262,6 +262,8 @@ class OrderController extends Controller
             $order->address = $input['address'];
         }
 
+        $currentTimestamp = now();
+        $order->order_date = $currentTimestamp; 
         // Сохраняем изменения в заказе
         $order->save();
 

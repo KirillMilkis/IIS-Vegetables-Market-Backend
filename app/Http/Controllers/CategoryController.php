@@ -130,7 +130,7 @@ class CategoryController extends Controller
         }
 
         if ($category->status == 'PROCESS'){
-            $category->status = 'REJECT';
+            $category->status = 'REJECTED';
         } else{
             return response()->json(['message' => 'Category cannot be approved'], 422);
         }
@@ -380,7 +380,7 @@ class CategoryController extends Controller
     private function validator_create(array $data)
     {
         return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:50'],
             'parent_id' => ['nullable', 'exists:categories,id', 'integer'],
             'status' => ['string','in:PROCESS,APPROVED,REJECTED'],
             'is_final' => ['boolean'],
@@ -390,7 +390,7 @@ class CategoryController extends Controller
     private function validator_update(array $data)
     {
         return Validator::make($data, [
-            'name' => ['nullable', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:50'],
             'parent_id' => ['nullable', 'exists:categories,id', 'integer'],
             'status' => ['nullable','string','in:PROCESS,APPROVED,REJECTED'],
             'is_final' => ['nullable','boolean'],

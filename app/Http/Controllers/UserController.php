@@ -275,12 +275,12 @@ class UserController extends Controller
     private function validator_create($data){
         return Validator::make($data, [
             'username' => 'required|max:20|unique:users',
-            'firstname' => 'required|max:32',
-            'lastname' => 'required|max:32',
+            'firstname' => 'required|max:50',
+            'lastname' => 'required|max:50',
             'address' => 'string|max:100',
             'password' => 'required|string|min:8|max:32',
-            'email' => 'string|max:255|unique:users',
-            'phone' => 'string|max:255',
+            'email' => 'string|max:50|unique:users',
+            'phone' => 'string|max:50',
             'role' => 'required|string|in:reg_user,moderator,admin',
         ]);
     }
@@ -290,7 +290,7 @@ class UserController extends Controller
             'username' => ['required', 'string', 'max:20', Rule::unique('users')->ignore($user->id),],
             'firstname' => 'required|string|max:32',
             'lastname' => 'required|string|max:32',
-            'address' => 'required|string|max:100',
+            'address' => 'nullable|string|max:100',
             'password' => 'nullable|string|min:8|max:32', // Для обновления пароля
             'email' => ['nullable','string','max:255','email',Rule::unique('users')->ignore($user->id),],
             'phone' => 'nullable|string|max:255',

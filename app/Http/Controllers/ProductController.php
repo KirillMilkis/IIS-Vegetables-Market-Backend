@@ -378,17 +378,17 @@ class ProductController extends Controller
             'name' => 'required|max:32',
             'description' => 'required|max:255',
             'farmer_id' => 'required|integer|exists:users,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image_root' => 'nullable|max:255',
             'category_id' => 'required|integer|exists:categories,id',
         ]);
     }
 
     private function validator_update($data){
         return Validator::make($data, [
-            'name' => 'nullable|max:32',
+            'name' => 'nullable|max:50',
             'description' => 'nullable|max:255',
             'farmer_id' => 'nullable|integer|exists:users,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image_root' => 'nullable|max:255',
             'category_id' => 'nullable|integer|exists:categories,id',
         ]);
 

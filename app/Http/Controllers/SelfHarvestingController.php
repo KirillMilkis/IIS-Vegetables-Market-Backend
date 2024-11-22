@@ -196,7 +196,7 @@ class SelfHarvestingController extends Controller
     public function validation_create($data){
         return Validator::make($data, [
             'name' => 'required|string|max:50',
-            'description' => 'required|string|max:100',
+            'description' => 'required|string|max:255',
             // 'price' => 'required|numeric',
             'dateTime' => 'required|timestamp',
             'location' => 'required|string|max:50',
@@ -208,7 +208,7 @@ class SelfHarvestingController extends Controller
     public function validation_update($data){
         return Validator::make($data, [
             'name' => 'nullable|string|max:50',
-            'description' => 'nullable|string|max:100',
+            'description' => 'nullable|string|max:255',
             // 'price' => 'required|numeric',
             'dateTime' => 'nullable|timestamp',
             'location' => 'nullable|string|max:50',

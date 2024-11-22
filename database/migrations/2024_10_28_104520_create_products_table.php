@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name', 50);
-            $table->string('description', 100);
+            $table->string('description', 255);
             $table->unsignedBigInteger('farmer_id');
-            $table->string('image_root', 100)->nullable();
+            $table->string('image_root', 255)->nullable();
             $table->unsignedBigInteger('category_id');
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->foreign('farmer_id')->references('id')->on('users')->onDelete('cascade');
