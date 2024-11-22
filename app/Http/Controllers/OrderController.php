@@ -34,7 +34,10 @@ class OrderController extends Controller
         }
 
         // Получаем заказы пользователя
-        $orders = Order::where('user_id', $id)->get();
+        $orders = Order::where('user_id', $id)
+        ->where('status', 'ORDERED') // Фильтруем только заказы со статусом 'ordered'
+        ->get();
+
 
         // Проверяем, есть ли заказы
         if ($orders->isEmpty()) {
