@@ -15,7 +15,11 @@ use App\Models\Attribute;
 class AttributeValueController extends Controller
 {
 
-
+    /**
+     * Display a listing of the a.
+     *
+     * @return AttributeValueCollection
+     */
     public function index()
     {
         
@@ -28,7 +32,13 @@ class AttributeValueController extends Controller
         return new AttributeValueCollection($attributeValues);
     }
 
-
+    /**
+     * Get attribute values that are related to an attribute.
+     * 
+     *
+     * @param Request $request
+     * @return AttributeValueCollection
+     */
     public function getByAttribute(Request $request)
     {
         $attributeId = $request->input('attribute_id');
@@ -36,8 +46,6 @@ class AttributeValueController extends Controller
         if (!$attributeId) {
             return response()->json(['message' => 'Should be specified attributeId', 'code' => 400], 400);
         }
-
-        $attribute = Attribute::find($attributeId);
 
 
         $attributeValues = AttributeValue::where('attribute_id', $attributeId)->get();
@@ -49,6 +57,13 @@ class AttributeValueController extends Controller
         return new AttributeValueCollection($attributeValues);
     }
 
+    /**
+     * Get attribute values that are related to a product.
+     * 
+     *
+     * @param Request $request
+     * @return AttributeValueCollection
+     */
     public function getByProduct(Request $request)
     {
         $productId = $request->route('productId');
@@ -66,6 +81,13 @@ class AttributeValueController extends Controller
     }
 
 
+    /**
+     * Get attribute values that are related to a product and an attribute.
+     * 
+     *
+     * @param Request $request
+     * @return AttributeValueCollection
+     */
     public function getByAttributeProduct(Request $request)
     {
         $attributeId = $request->input('attribute_id');
@@ -88,7 +110,12 @@ class AttributeValueController extends Controller
     }
 
 
-
+    /**
+     * Store a newly created attributeValue in storage.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function store(Request $request)
     {
         $input = collect($request -> all())->mapWithKeys(function ($value, $key) {
@@ -115,6 +142,12 @@ class AttributeValueController extends Controller
         }
     }
 
+    /**
+     * Display the specified attributeValue.
+     *
+     * @param int $id
+     * @return AttributeValueResource
+     */
     public function show($id)
     {
         $attributeValue = AttributeValue::find($id);
@@ -128,6 +161,13 @@ class AttributeValueController extends Controller
         return new AttributeValueResource($attributeValue);
     }
 
+    /**
+     * Update the specified attributeValue in storage.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
     public function update(Request $request, $id){
 
         $attributeValue = AttributeValue::find($id);
@@ -164,6 +204,14 @@ class AttributeValueController extends Controller
 
     }
 
+    /**
+     * Update the specified attributeValue in storage. But this method is used in ProductController.
+     * Its possible to update attribute values from product controller or create new one if it does not exist.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
     public function updateAttributeValuesFromProductController($productId, $attributeValueData)
     {
         
@@ -171,11 +219,14 @@ class AttributeValueController extends Controller
             ->where('attribute_id', $attributeValueData['attribute_id'])
             ->first();
 
+
         if ($attributeValue) {
             
             $attributeValue->update([
                 'value' => $attributeValueData['value'],
             ]);
+
+        // It can be created new attribute value if it does not exist because this attribute may be not required
         } else {
             
             AttributeValue::create([
@@ -186,24 +237,33 @@ class AttributeValueController extends Controller
         }
     }
 
+    /**
+     * Create the specified attributeValue in storage. But this method is used in ProductController.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
     public function createAttributeValuesFromProductController($productId, array $attributeValues)
     {
         foreach ($attributeValues as $value) {
-            // Проверяем, что данные корректны
             if (isset($value['attribute_id'], $value['value'])) {
                 AttributeValue::create([
                     'product_id' => $productId,
                     'attribute_id' => $value['attribute_id'],
                     'value' => $value['value'],
                 ]);
-            } else {
-                // Вы можете добавить обработку ошибок или пропустить некорректные данные
-                \Log::warning('Invalid attribute value data', ['data' => $value]);
-            }
+            } 
         }
     }
 
 
+    /**
+     * Remove the specified attributeValue from storage.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     public function destroy($id)
     {
         $attributeValue = AttributeValue::find($id);
@@ -225,6 +285,12 @@ class AttributeValueController extends Controller
         }
     }
 
+    /**
+     * Validate the input for creating a new attribute value.
+     * 
+     * @param array $input
+     * @return \Illuminate\Contracts\Validation\Validator
+    */
     private function validator_create($input)
     {
         return Validator::make($input, [
@@ -234,6 +300,12 @@ class AttributeValueController extends Controller
         ]);
     }
 
+    /**
+     * Validate the input for updating an attribute value.
+     * 
+     * @param array $input
+     * @return \Illuminate\Contracts\Validation\Validator
+    */
     private function validator_update($input)
     {
         return Validator::make($input, [

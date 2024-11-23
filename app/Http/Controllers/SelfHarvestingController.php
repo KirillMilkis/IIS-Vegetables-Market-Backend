@@ -13,7 +13,12 @@ use App\Models\User;
 use App\Models\Product; 
 
 class SelfHarvestingController extends Controller
-{
+{   
+    /**
+     * Display a listing of the self harvestings.
+     *
+     * @return SelfHarvestingCollection
+     */
     public function index(Request $request)
     {
         $selfHarvesting = SelfHarvesting::all();
@@ -21,16 +26,23 @@ class SelfHarvestingController extends Controller
         
     }
 
+    /**
+     * Get self harvestings that are related to a user.
+     * Only self harvestings tah users wanna visit.
+     *
+     * @param int $userId
+     * @return SelfHarvestingCollection
+     */
     public function getUserSelfHarvestings($userId)
     {
-        // Найти пользователя по ID
+        
         $user = User::find($userId);
 
         if (!$user) {
             return response()->json(['message' => 'User not found', 'code' => 404], 404);
         }
 
-        // Получить привязанные записи SelfHarvesting
+        // Get related SelfHarvesting records that user wanna visit.
         $selfHarvestings = $user->self_harvestings_visits()->get();
 
         if ($selfHarvestings->isEmpty()) {
@@ -42,21 +54,26 @@ class SelfHarvestingController extends Controller
             return $item;
         });
 
-        // Если записи найдены, возвращаем их
         return new SelfHarvestingCollection($selfHarvestings);
 
     }
 
+    /**
+     * Get self harvestings that are related to a farmer.
+     * Only self harvestings that farmer has planned for his products.
+     *
+     * @param int $userId
+     * @return SelfHarvestingCollection
+     */
     public function getFarmerSelfHarvestings($userId)
     {
-        // Найти пользователя по ID
         $user = User::find($userId);
 
         if (!$user) {
             return response()->json(['message' => 'User not found', 'code' => 404], 404);
         }
 
-        // Получить привязанные записи SelfHarvesting
+        // Get only SelfHarvesting records that farmer has planned for his products.
         $selfHarvestings = $user->self_harvestings_planned()->get();
 
         if ($selfHarvestings->isEmpty()) {
@@ -68,12 +85,17 @@ class SelfHarvestingController extends Controller
             return $item;
         });
 
-        // Если записи найдены, возвращаем их
         return new SelfHarvestingCollection($selfHarvestings);
 
     }
 
-
+    /**
+     * Get self harvestings that are related to a product.
+     * Product may have many self harvestings.
+     *
+     * @param int $productId
+     * @return SelfHarvestingCollection
+     */
     public function getProductSelfHarvestings($productId)
     {
         $product = Product::find($productId);
@@ -82,7 +104,6 @@ class SelfHarvestingController extends Controller
             return response()->json(['message' => 'Product not found', 'code' => 404], 404);
         }
 
-        // Получить привязанные записи SelfHarvesting
         $selfHarvestings = $product->self_harvestings()->get();
 
         if ($selfHarvestings->isEmpty()) {
@@ -94,11 +115,15 @@ class SelfHarvestingController extends Controller
             return $item;
         });
 
-        // Если записи найдены, возвращаем их
         return new SelfHarvestingCollection($selfHarvestings);
     }
     
-
+    /**
+     * Store a newly created self harvesting in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
@@ -107,20 +132,16 @@ class SelfHarvestingController extends Controller
 
         $product = Product::find($request->input('product_id'));
 
-        // Проверяем, существует ли продукт
         if (!$product) {
             return response()->json(['message' => 'Product not found', 'code' => 404], 404);
         }
 
-        // Получаем аутентифицированного пользователя
         $user = Auth::user();
-
-        // Проверяем, что пользователь является владельцем продукта
+        // Check if the user is the owner of the product. Only owner can create an event for his product.
         if ($product->farmer_id != $user['id']) {
             return response()->json(['message' => 'You can only create an event for your own product', 'code' => 403], 403);
         }
 
-        
         if (SelfHarvesting::create($input)) {
             return response()->json(['message' => 'SelfHarvesting created',
                 'code' => 201], 
@@ -133,6 +154,12 @@ class SelfHarvestingController extends Controller
         
     }
 
+    /**
+     * Display the specified self harvesting.
+     *
+     * @param int $id
+     * @return SelfHarvestingResource
+     */
     public function show($id)
     {
         $selfHarvesting = SelfHarvesting::find($id);
@@ -148,6 +175,12 @@ class SelfHarvestingController extends Controller
         return new SelfHarvestingResource($selfHarvesting);
     }
 
+    /**
+     * Update the specified self harvesting in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request)
     {
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
@@ -172,6 +205,12 @@ class SelfHarvestingController extends Controller
         }
     }
 
+    /**
+     * Remove the specified self harvesting from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
         $selfHarvesting = SelfHarvesting::find($id);
@@ -193,11 +232,16 @@ class SelfHarvestingController extends Controller
         }
     }
 
+    /**
+     * Validate the request data for creating a new self harvesting.
+     *
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     public function validation_create($data){
         return Validator::make($data, [
             'name' => 'required|string|max:50',
             'description' => 'required|string|max:255',
-            // 'price' => 'required|numeric',
             'dateTime' => 'required|timestamp',
             'location' => 'required|string|max:50',
             'farmer_id' => 'required|numeric|exists: users,id',
@@ -205,11 +249,16 @@ class SelfHarvestingController extends Controller
         ]);
     }
 
+    /**
+     * Validate the request data for updating a self harvesting.
+     *
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     public function validation_update($data){
         return Validator::make($data, [
             'name' => 'nullable|string|max:50',
             'description' => 'nullable|string|max:255',
-            // 'price' => 'required|numeric',
             'dateTime' => 'nullable|timestamp',
             'location' => 'nullable|string|max:50',
             'farmer_id' => 'nullable|numeric|exists: users,id',

@@ -40,7 +40,6 @@ class Category extends Model
 
         foreach ($this->child()->get() as $child)
         {
-            // echo "$this->name \n";
             $descendants->push($child);
             $descendants = $descendants->merge($child->allDescendants());
         }

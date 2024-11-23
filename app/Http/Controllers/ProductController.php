@@ -7,7 +7,6 @@ use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\ProductResource;
 use App\Models\Category;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\Attribute;
 use Illuminate\Support\Facades\Auth;
@@ -15,11 +14,18 @@ use App\Models\User;
 use App\Models\SelfHarvesting;
 
 class ProductController extends Controller
-{
+{   
+
+    /**
+     * Display a listing of the products.
+     * Category is can be specified to filter products by category.
+     * The request in this case should contain all product from the specified category and its from category descendants.
+     * 
+     * @param Request $request
+     * @return ProductResource
+     */
     public function index(Request $request)
     {
-
-        // $sessionId = Session::getId();
 
         $categoryId = $request->input('category_id');
         $query = Product::query();
@@ -31,6 +37,7 @@ class ProductController extends Controller
                 return response()->json(['message' => 'Category not found', 'code' => 404], 404);
             }
 
+            // Use the method from CategoryController to get all descendant category ids.
             $categoryIds = app('App\Http\Controllers\CategoryController')
             ->getDescendantCategoryIds($categoryId);
             $query->whereIn('category_id', $categoryIds);
@@ -41,67 +48,79 @@ class ProductController extends Controller
         if ($products->isEmpty()) {
             return response()->json(['message' => 'No products found', 'code' => 204], 204);
         }
-
-        // Session::put('filtered_products', $products);
       
         return ProductResource::collection($products);
     }
 
+    /**
+     * Display a listing of the products that farmer is selling.
+     * 
+     * @param int $farmerId
+     * @return ProductResource
+     */
     public function getProductsByFarmer($farmerId)
     {
     
         $user = User::find($farmerId);
 
         if (!$user) {
-        
             return response()->json(['message' => 'Farmer not found'], 404);
         }
-
         
         $products = $user->products; 
-
         
         return ProductResource::collection($products);
     }
 
-
+    /**
+     * Display a listing of the products that are available for self-harvesting.
+     * 
+     * @param int $selfHarvestingId
+     * @return ProductResource
+     */
     public function getProductsBySelfHarvesting($selfHarvestingId)
     {
     
         $selfHarvesting = SelfHarvesting::find($selfHarvestingId);
 
         if (!$selfHarvesting) {
-        
             return response()->json(['message' => 'Farmer not found'], 404);
         }
 
-        
         $products = $selfHarvesting->product()->get(); 
 
-        
         return ProductResource::collection($products);
     }
 
 
-
+    /**
+     * Filter products by category, attributes and name.
+     * Attributes are passed as an array of objects with attribute_id and value that product should have.
+     * 
+     * @param Request $request
+     * @return ProductResource
+     */
     public function filter(Request $request)
     {
         $query = Product::query();
 
-        $categoryId = $request->input('category_id');
-        $filters = $request->input('filters', []); // Массив значений атрибутов
-        $search = $request->input('name_like');
+        $categoryId = $request->input('category_id'); // Filter by category.
+        $filters = $request->input('filters', []);  // Filters by attributes.
+        $search = $request->input('name_like'); // Search by name.
 
+        // If category_id is specified, we get all products from the specified category and its descendants.
         if ($categoryId) {
             $categoryIds = app('App\Http\Controllers\CategoryController')
             ->getDescendantCategoryIds($categoryId);
             $query->whereIn('category_id', $categoryIds);
         }
 
+        // If filters are specified, we filter products by attributes.
         if (!empty($filters) && is_array($filters)) {
             foreach ($filters as $attributeId => $data) {
                 $attribute = Attribute::find($attributeId);
 
+                // Filter by attribute that contatin price in kg.
                 if ($attribute && $attribute->value_type === 'PRICE/KG') {
                     if (isset($data['min']) || isset($data['max'])) {
                         $min = isset($data['min']) ? $data['min'] : 0;
@@ -112,7 +131,7 @@ class ProductController extends Controller
                         });
                     }
                 }
-
+                // Filter by attribute that contatin price per piece.
                 if ($attribute && $attribute->value_type === 'PRICE/PIECE') {
                     if (isset($data['min']) || isset($data['max'])) {
                         $min = isset($data['min']) ? $data['min'] : 0;
@@ -123,7 +142,7 @@ class ProductController extends Controller
                         });
                     }
                 }
-
+                // Filter by attribute that contatin place.
                 if ($attribute && $attribute->value_type === 'PLACE') {
                     if (isset($data['value']) && is_array($data['value'])) {
                         $values = $data['value'];
@@ -133,19 +152,18 @@ class ProductController extends Controller
                         });
                     }
                 }
-
+                // Filter by attribute that contatin expiration date.
                 if ($attribute && $attribute->value_type === 'DATE') {
                     if (isset($data['value']) && is_array($data['value'])) {
-                        $value = $data['value'];  // Значение, с которым будет сравнение
-                        
+                        $value = $data['value'];         
                         $query->whereHas('attribute_values', function ($q) use ($attributeId, $value) {
-                            // Преобразуем значение из базы данных и входное значение в формат YYYY-MM-DD для корректного сравнения
+                            // Format date that is stored in the database and compare it with the value.
                             $q->where('attribute_id', $attributeId)
-                            ->whereRaw('STR_TO_DATE(value, "%Y-%m-%d") >= ?', [$date]);  // Преобразование строки в дату и сравнение
+                            ->whereRaw('STR_TO_DATE(value, "%Y-%m-%d") >= ?', [$value]); 
                         });
                     }
                 }
-
+                // Filter by attribute that contatin quantity.
                 if ($attribute && $attribute->value_type === 'QUANTITY') {
                     if (isset($data['value'])) {
                         $value = $data['value'];
@@ -174,9 +192,12 @@ class ProductController extends Controller
     }
 
 
-   
-
-
+    /**
+     * Store a newly created product in storage.
+     * 
+     * @param Request $request
+     * @return ProductResource
+     */
     public function store(Request $request)
     {
         $authUser = Auth::user();
@@ -185,7 +206,6 @@ class ProductController extends Controller
             return [Str::snake($key) => $value];
         })->toArray();
 
-        // $input['farmer_id'] = $farmerId;
 
         $validator = $this->validator_create($input);
 
@@ -205,11 +225,12 @@ class ProductController extends Controller
             ], 404);
         }
 
+        // Get all attributes of the category where the product is created. 
         $attributes = $category->category_attributes()
         ->get();
-
+        
         $attributeValues = $request->input('attribute_values');
-
+        // Check if it is enough attribute values specified for the category where the product is created.
         if (!$attributeValues || count($attributeValues) < $attributes->count()) {
             return response()->json([
                 'message' => 'Not all required attribute values provided',
@@ -217,20 +238,14 @@ class ProductController extends Controller
             ], 400);
         }
     
-        // Проверяем, что для каждого обязательного атрибута есть значение
+        // Check if all required attributes have values.
         foreach ($attributes as $categoryAttribute) {
-            $attribute = $categoryAttribute->attribute; // Достаём модель Attribute
-            $isRequired = $categoryAttribute->is_required; // Достаём флаг обязательности из category_attribute
-        
-            $attributeValue = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
+            $attribute = $categoryAttribute->attribute; // Get attribute from category_attribute.
+            $isRequired = $categoryAttribute->is_required; // Get is_required from category_attribute.
             
-            // if (!$attributeValue){
-            //     return response()->json([
-            //         'message' => "All attributes Value must be sent, but may have value null",
-            //         'code' => 400
-            //     ], 400);
-            // }
-            // Если атрибут обязательный и значение отсутствует или пустое, возвращаем ошибку
+            // Get the value of the attribute from the request.
+            $attributeValue = collect($attributeValues)->firstWhere('attribute_id', $attribute->id);
+            // If attribute does not have a value from the request but it is required, return an error.
             if ($isRequired &&  empty($attributeValue['value'])) {
                 return response()->json([
                     'message' => "Value for attribute {$attribute->name} is required",
@@ -241,10 +256,9 @@ class ProductController extends Controller
             
         }
     
-        // Создаем продукт
         $product = Product::create($input);
     
-        // Создаем записи в таблице AttributeValue
+        // Create a attribute values records for the product.
         app('App\Http\Controllers\AttributeValueController')
         ->createAttributeValuesFromProductController($product->id, $attributeValues);
 
@@ -257,6 +271,12 @@ class ProductController extends Controller
         
     }
 
+    /**
+     * Display the specified product.
+     * 
+     * @param int $id
+     * @return ProductResource
+     */
     public function show($id)
     {
         $product = Product::find($id);
@@ -268,11 +288,16 @@ class ProductController extends Controller
         return new ProductResource($product);
     }
 
+    /**
+     * Update the specified product in storage.
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function update(Request $request)
     {
         $authUser = Auth::user();
 
-        // Поиск продукта
         $product = Product::find($request->route('id'));
 
         if (!$product) {
@@ -282,7 +307,7 @@ class ProductController extends Controller
             ], 404);
         }
 
-        // Проверка прав доступа
+        // If the user is not the owner of the product, return an error.
         if ($product->farmer_id != $authUser->id) {
             return response()->json([
                 'message' => "You don't have access to change other user's products",
@@ -290,7 +315,6 @@ class ProductController extends Controller
             ], 403);
         }
 
-        // Проверка категории
         $category = Category::find($request->category_id);
         if (!$category) {
             return response()->json([
@@ -299,12 +323,10 @@ class ProductController extends Controller
             ], 400);
         }
 
-        // Преобразование данных из snake_case
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
         })->toArray();
 
-        // Валидация данных
         $validator = $this->validator_update($input);
 
         if ($validator->fails()) {
@@ -315,7 +337,7 @@ class ProductController extends Controller
             ], 400);
         }
 
-        // Обновление основного продукта
+
         if (!$product->update($input)) {
             return response()->json([
                 'message' => 'Product not updated',
@@ -323,15 +345,17 @@ class ProductController extends Controller
             ], 500);
         }
 
-        // Обновление значений атрибутов
+        // Update the attribute values of the product.
         $attributeValues = $request->input('attribute_values', []);
 
+        // Take all existing attributes of the product that product have with specified attribute values.
         $existingAttributes = $product->attribute_values->pluck('attribute_id')->toArray();
 
-        // Проверяем, что все существующие атрибуты продукта имеют переданные значения
+        // Check if all existing attributes have values.
         $passedAttributeIds = collect($attributeValues)->pluck('attribute_id')->toArray();
         $missingAttributes = array_diff($existingAttributes, $passedAttributeIds);
 
+        // If not all existing attributes have values, return an error.
         if (!empty($missingAttributes)) {
             return response()->json([
                 'message' => 'Not all attribute values are provided for existing attributes',
@@ -341,7 +365,7 @@ class ProductController extends Controller
         }
 
         foreach ($attributeValues as $attributeValue) {
-            // Вызов метода AttributeValueController
+            // Update every attribute value of the product.
             if($attributeValue)
             app('App\Http\Controllers\AttributeValueController')
             ->updateAttributeValuesFromProductController($product->id, $attributeValue);
@@ -353,6 +377,12 @@ class ProductController extends Controller
         ], 200);
     }
 
+    /**
+     * Remove the specified product from storage.
+     * 
+     * @param int $id
+     * @return JsonResponse
+     */
     public function destroy($id)
     {
         $product = Product::find($id);
@@ -373,6 +403,12 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * Validate the input for creating a new product.
+     * 
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_create($data){
         return Validator::make($data, [
             'name' => 'required|max:32',
@@ -383,6 +419,12 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * Validate the input for updating a product.
+     * 
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_update($data){
         return Validator::make($data, [
             'name' => 'nullable|max:50',

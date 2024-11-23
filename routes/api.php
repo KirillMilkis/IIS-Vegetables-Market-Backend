@@ -41,7 +41,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
     Route::patch('products/{id}', [ProductController::class, 'update'])->middleware('auth:sanctum');
     Route::delete('products/{id}', [ProductController::class, 'destroy'])->middleware('auth:sanctum');
 
-    Route::get('categories/filter', [CategoryController::class, 'filter']); // cahnged route
+    Route::get('categories/filter', [CategoryController::class, 'filter']); 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/toApprove', [CategoryController::class, 'getToApprove'])->middleware('auth:sanctum');
     Route::get('categories/{id}', [CategoryController::class, 'show']);
@@ -53,7 +53,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
 
 
     Route::get('attributes', [AttributeController::class, 'index']); 
-    Route::get('attributes/categoryOrProduct', [AttributeController::class, 'getByCategoryOrProduct']); // cahnged
+    Route::get('attributes/categoryOrProduct', [AttributeController::class, 'getByCategoryOrProduct']); 
     Route::get('attributes/filter', [AttributeController::class, 'filter']);
     Route::post('attributes/create', [AttributeController::class, 'store'])->middleware('auth:sanctum');
     Route::get('attributes/{id}', [AttributeController::class, 'show']);
@@ -63,7 +63,7 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
 
     Route::get('attribute_values', [AttributeValueController::class, 'index']);
     Route::get('attribute_values/product/{productId}', [AttributeValueController::class, 'getByProduct']);
-    Route::get('attribute_values/attribute', [AttributeValueController::class, 'getByAttribute']); // changed route
+    Route::get('attribute_values/attribute', [AttributeValueController::class, 'getByAttribute']); 
     Route::post('attribute_values/create', [AttributeValueController::class, 'store'])->middleware('auth:sanctum');
     Route::get('attribute_values/{id}', [AttributeValueController::class, 'show']);
     Route::put('attribute_values/{id}', [AttributeValueController::class, 'update'])->middleware('auth:sanctum');
@@ -114,8 +114,6 @@ Route::group(['middleware' => ['web'],'namespace' => 'App\Http\Controllers'], fu
 
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-    // Route::get('/user', [AuthController::class, 'user'])->middleware('auth:sanctum');
-
 
     Route::get('/csrf-token', function () {
         return response()->json(['csrf_token' => csrf_token()]);

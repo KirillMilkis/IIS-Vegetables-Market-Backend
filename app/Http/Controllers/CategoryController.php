@@ -16,7 +16,11 @@ use App\Models\CategoryAttribute;
 
 class CategoryController extends Controller
 {
-
+    /**
+     * Display a listing of the categories.
+     *
+     * @return CategoryCollection
+     */
     public function index()
     {
         $categories = Category::all();
@@ -24,15 +28,24 @@ class CategoryController extends Controller
         return new CategoryCollection($categories);
     }
 
+    /**
+     * Filter categories by attributes and search query
+     * There is an option to filter by name and attributes among all categories or 
+     * filter just by parent id, and get child categories or root categories if parent_id is not specified
+     * 
+     * @param Request $request
+     * @return CategoryCollection
+     */
     public function filter(Request $request)
     {
-        $attributes = $request->input('attributes_id', []); // Массив идентификаторов атрибутов
-        $search = $request->input('name_like');         // Поисковый запрос
-        $parentId = $request->input('parent_id');        // parentId
+        $attributes = $request->input('attributes_id', []); // array of attribute ids
+        $search = $request->input('name_like');         // search query
+        $parentId = $request->input('parent_id');        // parent category id
 
         $query = Category::query();
         $query->where('status', 'APPROVED');
 
+        // if attributes are specified, we filter by them
         if (!empty($attributes) && is_array($attributes)) {
             foreach ($attributes as $attributeId) {
                 $query->whereHas('attributes', function($q) use ($attributeId) {
@@ -40,16 +53,17 @@ class CategoryController extends Controller
                 });
             }
         }
-
+        // if search query is specified, we filter by it
         if (!empty($search)) {
             $query->where('name', 'like', "%{$search}%");
         }
 
+        // if search query and attributes are not specified, we filter by parent_id, or get root categories
         if (empty($attributes) && empty($search)) {
             if ($parentId !== null) {
-                $query->where('parent_id', $parentId);
+                $query->where('parent_id', $parentId); // get child categories
             } else {
-                $query->whereNull('parent_id'); // Корневые категории
+                $query->whereNull('parent_id'); // get root categories
             }
         }
 
@@ -65,22 +79,27 @@ class CategoryController extends Controller
 
     }
 
+    /**
+     * Get categories that users proposed for moderator approval
+     * 
+     * @return CategoryCollection
+     */
     public function getToApprove()
     {
         
-        $user_initator = Auth::user();
-        if($user_initator['role'] != 'moderator'){
+        $authUser = Auth::user();
+        if($authUser['role'] != 'moderator'){
             return response()->json(['message' => 'You dont have access with your role'], 403);
         }
 
         $categories = Category::where('status', 'PROCESS')->get();
 
-        // Check if no categories were found
         if ($categories->isEmpty()) {
             return response()->json(['message' => 'No categories pending approval', 'code' => 204], 204);
         }
     
-        // Return the categories in a structured response (optional: use a resource/collection if needed)
+        // For convinience, we add the parent_name field to each category
+        // Thats for clarity for the moderator, he will see in which category the new proposed category is located
 
         $categories->transform(function ($category) {
            
@@ -92,10 +111,17 @@ class CategoryController extends Controller
 
     }
 
+    /**
+     * Approve category by moderator
+     * 
+     * @param int $categoryId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function approveCategory($categoryId){
 
-        $user_initator = Auth::user();
-        if($user_initator['role'] != 'moderator'){
+        // Check if the user is a moderator. Because only a moderator can approve categories
+        $authUser = Auth::user();
+        if($authUser['role'] != 'moderator'){
             return response()->json(['message' => 'You dont have access with your role'], 403);
         }
 
@@ -105,6 +131,7 @@ class CategoryController extends Controller
             return response()->json(['message' => 'Category not found'], 404);
         }
 
+        // If the category is in the process of approval, then we can approve it by changing the status to APPROVED
         if ($category->status == 'PROCESS'){
             $category->status = 'APPROVED';
         } else{
@@ -116,10 +143,17 @@ class CategoryController extends Controller
 
     }
 
+    /**
+     * Reject category by moderator
+     * 
+     * @param int $categoryId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function rejectCategory($categoryId){
 
-        $user_initator = Auth::user();
-        if($user_initator['role'] != 'moderator'){
+        // Check if the user is a moderator. Because only a moderator can reject categories
+        $authUser = Auth::user();
+        if($authUser['role'] != 'moderator'){
             return response()->json(['message' => 'You dont have access with your role'], 403);
         }
 
@@ -129,6 +163,7 @@ class CategoryController extends Controller
             return response()->json(['message' => 'Category not found'], 404);
         }
 
+        // If the category is in the process of approval, then we can reject it by changing the status to REJECTED
         if ($category->status == 'PROCESS'){
             $category->status = 'REJECTED';
         } else{
@@ -137,13 +172,20 @@ class CategoryController extends Controller
 
         $category->save();
 
-
     }
 
+    /**
+     * Create a new category. 
+     * If it is by a moderator, then the category will be immediately approved
+     * If it is by a regular user, then the category will be in the process of approval
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
 
-        $user_initiator = Auth::user();
+        $authUser = Auth::user();
 
         $input = collect($request -> all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
@@ -159,6 +201,7 @@ class CategoryController extends Controller
                 'code' => 400], 400);
         }
 
+        // Case when category to create is gonna be a child category
         if ($input['parent_id'] != null){
             $parent = Category::find($input['parent_id']);
 
@@ -173,6 +216,8 @@ class CategoryController extends Controller
                 500);
             }
 
+            // If the parent category is final, then the child category will also be final
+            // Parent category will be changed to non-final
             if($parent->isFinal == 'true'){
                 $parent->update([ 'is_final' => false ]);
                 $category->setAttribute('is_final', true);
@@ -181,8 +226,9 @@ class CategoryController extends Controller
             }
             
         } else {
-
+            // Case when category to create is gonna be a root category
             $category = Category::create($input);
+            // Root category is always non-final
             $category->is_final = false;
 
             if(!$category){
@@ -192,7 +238,8 @@ class CategoryController extends Controller
             }
         }
 
-        switch ($user_initiator['role']) {
+        // Set the status of the category depending on the role of the user
+        switch ($authUser['role']) {
             case 'moderator':
                 $category->status = 'APPROVED';
                 break;
@@ -205,21 +252,20 @@ class CategoryController extends Controller
 
         $category->save(); 
 
-        
+        // If in request there are attributes, then we create a record in the category_attributes table
         if ($request->input('attributes')) {
             $attributesData = $request->input('attributes');
         
-            // Проверяем, что каждый атрибут содержит необходимые данные
+            // Check that each attribute contains the necessary data
             foreach ($attributesData as $attribute) {
                 if (!isset($attribute['id'])) {
                     return response()->json(['message' => 'Each attribute must have an id', 'code' => 400], 400);
                 }
             }
         
-            // Удаляем существующие связи для текущей категории, если требуется
-            CategoryAttribute::where('category_id', $category->id)->delete();
         
-            // Создаем новые записи в `category_attributes`
+            // Create new records in `category_attributes`. This is a many-to-many relationship between categories and attributes.
+            // It also contains the is_required field.
             foreach ($attributesData as $attribute) {
                 CategoryAttribute::create([
                     'category_id' => $category->id,
@@ -232,13 +278,18 @@ class CategoryController extends Controller
 
         $category->save(); 
 
-
         return response()->json(['message' => 'Category created',
             'code' => 201], 
             201);
 
     }
 
+    /**
+     * Display the specified category.
+     *
+     * @param int $id
+     * @return CategoryResource
+     */
     public function show($id)
     {
         $category = Category::find($id);
@@ -252,20 +303,19 @@ class CategoryController extends Controller
         return new CategoryRecourse($category);
     }
 
+    /**
+     * Update the specified category in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request)
     {
         $category = Category::find($request->route('id'));
         $userAuth = Auth::user();
-    
-        Log::info('Full request:', $request->all());
 
-
-        // Проверяем, что пользователь аутентифицирован
-        if (!$userAuth) {
-            return response()->json(['message' => 'User not authenticated', 'code' => 401], 401);
-        }
     
-        // Проверяем роль пользователя
+        // Check if the user is a moderator. Because only a moderator can update categories
         if ($userAuth['role'] != 'moderator') {
             return response()->json(['message' => 'You dont have access with your role', 'code' => 403], 403);
         }
@@ -289,28 +339,28 @@ class CategoryController extends Controller
                 'code' => 400]);
         }
 
+        // Delete all categories from the category_attributes table. 
+        // Every time that someone updates a category, we delete all the attributes and then add them again.
+        // In request should be new and old attributes
         CategoryAttribute::where('category_id', $category->id)->delete();
         if ($category->update($input)) {
-            // Если были переданы атрибуты для синхронизации
             if ($request->input('attributes')) {
                 $attributesData = $request->input('attributes');
-                // Проверяем, что каждый атрибут содержит необходимые данные
+                
+                // Check that each attribute contains the necessary data
                 foreach ($attributesData as $attribute) {
-                    Log::info('Popal v 1 ');
+
                     if (!isset($attribute['id'])) {
                         return response()->json(['message' => 'Each attribute must have an id', 'code' => 400], 400);
                     }
                 }
-            
-                // Удаляем существующие связи для текущей категории, если требуется
-            
-                // Создаем новые записи в `category_attributes`
+
+                // Create new records in `category_attributes`. This is a many-to-many relationship between categories and attributes.
                 foreach ($attributesData as $attribute) {
-                    Log::info('Popal v 2 ');
                     CategoryAttribute::create([
                         'category_id' => $category->id,
                         'attribute_id' => $attribute['id'],
-                        'is_required' => $attribute['required'] ?? false, // Значение по умолчанию — false
+                        'is_required' => $attribute['required'] ?? false, // Default is required value is false
                     ]);
                 }
             }
@@ -326,8 +376,15 @@ class CategoryController extends Controller
         }
     }
 
+    /**
+     * Remove the specified category from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
+        // Check if the user is a moderator. Because only a moderator can delete categories
         $user_initiator = Auth::user();
         if($user_initiator['role'] != 'moderator'){
             return response()->json(['message' => 'Cannot delete category with your role'], 403);
@@ -352,11 +409,18 @@ class CategoryController extends Controller
         }
     }
 
+    /**
+     * Get all descendant category ids. 
+     *
+     * @param int $categoryId
+     * @return array
+     */
     public function getDescendantCategoryIds($categoryId)
     {
         $categoryIds = [$categoryId];
         $childCategories = Category::where('parent_id', $categoryId)->get();
 
+        // Recursive call for each child category
         foreach ($childCategories as $childCategory) {
             $categoryIds = array_merge($categoryIds, $this->getDescendantCategoryIds($childCategory->id));
         }
@@ -364,6 +428,12 @@ class CategoryController extends Controller
         return $categoryIds;
     }
 
+    /**
+     * Get all parent category ids. 
+     *
+     * @param int $categoryId
+     * @return array
+     */
     public function getParentsCategoryIds($categoryId)
     {
         $categoryIds = [];
@@ -377,6 +447,12 @@ class CategoryController extends Controller
         return $categoryIds;
     }
 
+    /**
+     * Validate the request data for creating a new category.
+     *
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_create(array $data)
     {
         return Validator::make($data, [
@@ -387,6 +463,12 @@ class CategoryController extends Controller
         ]);
     }
 
+    /**
+     * Validate the request data for updating a category.
+     *
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_update(array $data)
     {
         return Validator::make($data, [

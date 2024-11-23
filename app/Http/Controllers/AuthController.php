@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+
+    /**
+     * Login user and create token
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -35,7 +42,12 @@ class AuthController extends Controller
         ]);
     }
 
-
+    /**
+     * Register a new user
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function register(Request $request)
     {
         
@@ -63,7 +75,7 @@ class AuthController extends Controller
         ]);
 
       
-        $token = $user->createToken('YourAppName')->plainTextToken;  
+        $token = $user->createToken('VegetableMarket')->plainTextToken;  
 
       
         return response()->json([
@@ -78,6 +90,11 @@ class AuthController extends Controller
         ], 201);
     }
 
+    /**
+     * Logout user (Revoke the token)
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function logout()
     {
         

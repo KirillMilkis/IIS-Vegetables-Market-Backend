@@ -8,12 +8,15 @@ use Illuminate\Http\Request;
 use App\Models\Attribute;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use App\Models\Category;
 use App\Models\Product;
 
 class AttributeController extends Controller
 {
-
+    /**
+     * Display a listing of the resource.
+     *
+     * @return AttributeCollection
+     */
     public function index()
     {
         $attributes = Attribute::all();
@@ -22,6 +25,13 @@ class AttributeController extends Controller
 
     }
 
+    /**
+     * Get attributes that are related to a categoryId or a productId. But not both.
+     * 
+     *
+     * @param Request $request
+     * @return AttributeCollection
+     */
     public function getByCategoryOrProduct(Request $request)
     {
         $categoryId = $request->input('category_id');
@@ -37,7 +47,8 @@ class AttributeController extends Controller
             ], 400);
         }
         
-
+        // If a category_id is specified, we get the attributes that are related to that category.
+        // If a product_id is specified, we get the attributes that are related to that product.
         if ($categoryId) {
 
             $query->whereHas('attribute_categories', function($q) use ($categoryId) {
@@ -56,24 +67,24 @@ class AttributeController extends Controller
         if ($attributes->isEmpty()) {
             return response()->json(['message' => 'No attributes found', 'code' => 204], 204);
         }
-
+        
+        // For convenience, we add the is_required flag to each attribute. 
+        // This flag is located in the pivot table category_attribute.
         $attributes->each(function ($attribute) use ($categoryId, $productId) {
-            // Если указан category_id, берем его напрямую
             if ($categoryId) {
                 $categoryAttribute = $attribute->attribute_categories->firstWhere('category_id', $categoryId);
             } 
-            // Если указан product_id, берем категорию продукта
+        
             else if ($productId) {
                 $product = Product::find($productId);
                 $productCategory = $product->category->first();
                 $categoryAttribute = $attribute->attribute_categories->firstWhere('category_id', $productCategory->id);
             }
         
-            // Если найдено, добавляем флаг is_required
             if ($categoryAttribute) {
                 $attribute->is_required = $categoryAttribute->is_required;
             } else {
-                $attribute->is_required = false; // Если связи нет, по умолчанию false
+                $attribute->is_required = false; 
             }
         });
 
@@ -82,7 +93,14 @@ class AttributeController extends Controller
         
     }
 
-   
+
+    /**
+     * Store a newly created attribute in storage.
+     * But our implementation in frontend does not allow to create new attribute.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
 
     public function store(Request $request)
     {
@@ -111,6 +129,12 @@ class AttributeController extends Controller
         
     }
 
+    /**
+     * Display the specified attribute.
+     *
+     * @param int $id
+     * @return AttributeResource
+     */
     public function show($id)
     {
         $attribute = Attribute::find($id);
@@ -125,6 +149,14 @@ class AttributeController extends Controller
 
     }
 
+    /**
+     * Update the specified attribute in storage.
+     * But our implementation in frontend does not allow to update attribute.
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request, $id)
     {
         
@@ -162,6 +194,14 @@ class AttributeController extends Controller
 
     }
 
+    /**
+     * Remove the specified attribute from storage.
+     * But our implementation in frontend does not allow to delete attribute.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+
     public function destroy($id)
     {
         
@@ -185,6 +225,12 @@ class AttributeController extends Controller
 
     }
 
+    /**
+     * Validate the request data for creating a new attribute.
+     *
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_create(array $data)
     {
         return Validator::make($data, [
@@ -193,6 +239,13 @@ class AttributeController extends Controller
         ]);
     }
 
+
+    /**
+     * Validate the request data for updating an attribute.
+     *
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_update(array $data)
     {
         return Validator::make($data, [

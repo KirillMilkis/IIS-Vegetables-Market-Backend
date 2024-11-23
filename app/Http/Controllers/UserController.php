@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\UserCollection;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use App\Models\SelfHarvesting;
@@ -18,7 +17,9 @@ use App\Models\SelfHarvesting;
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the users.
+     *
+     * @return UserCollection
      */
     public function index()
     {   
@@ -27,6 +28,11 @@ class UserController extends Controller
         
     }
 
+    /**
+     * Get farmers who have products.
+     *
+     * @return UserCollection
+     */
     public function getFarmers()
     {
         
@@ -36,11 +42,16 @@ class UserController extends Controller
         return new UserCollection($users);
     }
 
+    /**
+     * Get the farmer who has a specific product.
+     *
+     * @param Request $request
+     * @return UserResource
+     */
     public function getFarmerByProductId(Request $request)
     {
 
         $productId = $request->input('product_id');
-
     
         if (!$productId) {
             return response()->json([
@@ -70,16 +81,19 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created user in storage.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
-
 
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
         })->toArray();
 
+        // Admin cannot be created via API, only via seeder.
         if ($input['role'] != 'moderator' && $input['role'] != 'reg_user'){
             return response()-> json([
                 'message' => 'Cannot create admin',
@@ -96,6 +110,7 @@ class UserController extends Controller
                 'code' => 400], 400);
         }
 
+        // Hash the password
         $input['password'] = bcrypt($input['password']);
 
         if (User::create($input)) {
@@ -109,10 +124,11 @@ class UserController extends Controller
         }
     }
 
-    
-
     /**
-     * Display the specified resource.
+     *  Display the specified user.
+     *
+     * @param string $id
+     * @return UserResource
      */
     public function show(string $id)
     {
@@ -128,7 +144,10 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified user in storage.
+     *
+     * @param Request $request
+     * @return UserResource
      */
     public function update(Request $request)
     {
@@ -142,6 +161,7 @@ class UserController extends Controller
 
         $authUser = Auth::user(); 
 
+        // User can modify only his own account. Admin can modify any account.
         if ($authUser->role === 'reg_user' || $authUser->role === 'moderator') {
             if ($authUser->id !== $user->id) {
                 return response()->json(['message' => 'You can only modify your own account', 'code' => 403], 403);
@@ -175,27 +195,33 @@ class UserController extends Controller
 
     }
 
-
+    /**
+     * Attach a self harvesting to the user.
+     * Only for purpose that user wanna visit the self harvesting.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function attachSelfHarvesting(Request $request)
     {
-        // Найти пользователя по ID
+ 
         $authUser = Auth::user(); 
 
-          // Получить идентификатор SelfHarvesting из запроса
+    
         $selfHarvestingId = $request->input('self_harvesting_id');
 
-        // Проверить, что идентификатор передан
+
         if (empty($selfHarvestingId)) {
             return response()->json(['message' => 'Invalid or missing self_harvesting_id', 'code' => 400], 400);
         }
 
-        // Проверить существование SelfHarvesting по переданному ID
+
         $selfHarvestingExists = SelfHarvesting::where('id', $selfHarvestingId)->exists();
 
         if (!$selfHarvestingExists) {
             return response()->json(['message' => 'SelfHarvesting not found', 'code' => 404], 404);
         }
-        // Привязать SelfHarvesting к пользователю
+  
         $authUser->self_harvestings_visits()->syncWithoutDetaching([$selfHarvestingId]);
 
         return response()->json([
@@ -204,27 +230,34 @@ class UserController extends Controller
         ], 200);
     }
 
+    /**
+     * Detach a self harvesting from the user.
+     * Only for purpose that user wanna cancel the visit to the self harvesting.
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function detachSelfHarvesting(Request $request)
     {
-        // Найти аутентифицированного пользователя
+        
         $authUser = Auth::user(); 
 
-        // Получить идентификатор SelfHarvesting из запроса
+        
         $selfHarvestingId = $request->input('self_harvesting_id');
 
-        // Проверить, что идентификатор передан
+        
         if (empty($selfHarvestingId)) {
             return response()->json(['message' => 'Invalid or missing self_harvesting_id', 'code' => 400], 400);
         }
 
-        // Проверить существование SelfHarvesting по переданному ID
+        
         $selfHarvestingExists = SelfHarvesting::where('id', $selfHarvestingId)->exists();
 
         if (!$selfHarvestingExists) {
             return response()->json(['message' => 'SelfHarvesting not found', 'code' => 404], 404);
         }
 
-        // Удалить связь SelfHarvesting с пользователем
+        
         $authUser->self_harvestings_visits()->detach($selfHarvestingId);
 
         return response()->json([
@@ -234,7 +267,10 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified user from storage.
+     *
+     * @param string $id
+     * @return JsonResponse
      */
     public function delete(string $id)
     {
@@ -272,6 +308,12 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Validate the input for creating a user.
+     *
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_create($data){
         return Validator::make($data, [
             'username' => 'required|max:20|unique:users',
@@ -284,7 +326,14 @@ class UserController extends Controller
             'role' => 'required|string|in:reg_user,moderator,admin',
         ]);
     }
-
+    
+    /**
+     * Validate the input for updating a user.
+     *
+     * @param array $data
+     * @param User $user
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_update($data, $user){
         return Validator::make($data, [
             'username' => ['required', 'string', 'max:20', Rule::unique('users')->ignore($user->id),],

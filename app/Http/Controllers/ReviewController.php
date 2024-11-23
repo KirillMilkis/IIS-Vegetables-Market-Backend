@@ -12,13 +12,24 @@ use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller
 {
+    /**
+     * Display a listing of the review.
+     *
+     * @return ReviewCollection
+     */
     public function index()
     {
         $reviews = Review::all();
         return response()->json($reviews);
     }
 
-
+    /**
+     * Get reviews that are related to a product.
+     * 
+     *
+     * @param int $productId
+     * @return ReviewCollection
+     */
     public function getByProduct($productId)
     {
         $reviews = Review::where('product_id',$productId)->get();
@@ -27,6 +38,13 @@ class ReviewController extends Controller
         return new ReviewCollection($reviews);
     }
 
+    /**
+     * Get the average rating of a product.
+     * 
+     *
+     * @param int $productId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAverageRating($productId)
     {
         $averageRating = Review::where('product_id', $productId)->avg('rating');
@@ -38,7 +56,12 @@ class ReviewController extends Controller
     }
 
 
-
+    /**
+     * Store a newly created review in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
@@ -66,6 +89,12 @@ class ReviewController extends Controller
 
     }
 
+    /**
+     * Display the specified review.
+     *
+     * @param int $id
+     * @return ReviewResource
+     */
     public function show($id)
     {
         $review = Review::find($id);
@@ -79,6 +108,12 @@ class ReviewController extends Controller
         return new ReviewResource($review);
     }
 
+    /**
+     * Update the specified review in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request)
     {
         $input = collect($request->all())->mapWithKeys(function ($value, $key) {
@@ -112,6 +147,12 @@ class ReviewController extends Controller
         }
     }
 
+    /**
+     * Remove the specified review from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
         $review = Review::find($id);
@@ -133,6 +174,12 @@ class ReviewController extends Controller
         }
     }
 
+    /**
+     * Validate the input for creating a review.
+     *
+     * @param array $input
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     private function validator_create($input) {
         return Validator::make($input, [
             'username' => 'required|string',

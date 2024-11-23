@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
+    /**
+     * Display a listing of the orders.
+     *
+     * @return OrderCollection
+     */
     public function index(Request $request)
     {
         $orders = Order::all();
@@ -22,9 +27,14 @@ class OrderController extends Controller
         
     }
 
+    /**
+     * Get orders by user ID
+     *
+     * @param int $id
+     * @return OrderCollection
+     */
     public function getByUser($id)
     {
-        // Проверяем, существует ли пользователь с указанным ID
         $user = User::find($id);
         if (!$user) {
             return response()->json([
@@ -33,13 +43,12 @@ class OrderController extends Controller
             ], 404);
         }
 
-        // Получаем заказы пользователя
+        // In this method, we only want to return orders with status 'ORDERED', because 'UNORDERED' orders are not real orders
         $orders = Order::where('user_id', $id)
-        ->where('status', 'ORDERED') // Фильтруем только заказы со статусом 'ordered'
+        ->where('status', 'ORDERED') 
         ->get();
 
 
-        // Проверяем, есть ли заказы
         if ($orders->isEmpty()) {
             return response()->json([
                 'message' => 'No orders found for this user',
@@ -47,7 +56,6 @@ class OrderController extends Controller
             ], 204);
         }
 
-        // Возвращаем заказы в виде коллекции
         return response()->json([
             'message' => 'Orders retrieved successfully',
             'orders' => new OrderCollection($orders),
@@ -55,9 +63,15 @@ class OrderController extends Controller
         ], 200);
     }
 
+    /**
+     * Get unordered orders by user ID
+     *
+     * @param int $id
+     * @return OrderCollection
+     */
     public function getUnorderedOrder($id)
     {
-        // Проверяем, существует ли пользователь с указанным ID
+  
         $user = User::find($id);
         if (!$user) {
             return response()->json([
@@ -66,12 +80,12 @@ class OrderController extends Controller
             ], 404);
         }
 
-        // Получаем заказы со статусом "UNCONFIRMED" для указанного пользователя
+        // In this method, we only want to return orders with status 'UNORDERED'.
+        // Order with this status works as a cart, so we only want to return the last one.
         $orders = Order::where('user_id', $id)
             ->where('status', 'UNORDERED')
             ->get();
 
-        // Проверяем, есть ли такие заказы
         if ($orders->isEmpty()) {
             return response()->json([
                 'message' => 'No unordered orders found for this user',
@@ -79,18 +93,19 @@ class OrderController extends Controller
             ], 204);
         }
 
-
+        // There should be only one UNORDERED order at a time.
+        // Check if there are more than one and delete all but not the first one.
+        // User will have only one cart at a time.
         if ($orders->count() > 1) {
-            $ordersToDelete = $orders->slice(1); // Все, кроме самого последнего
+            $ordersToDelete = $orders->slice(1); 
             foreach ($ordersToDelete as $order) {
-                $order->delete(); // Удаляем заказ
+                $order->delete(); 
             }
         }
     
-        // Получаем последний оставшийся заказ
+        // Recieve the cart of the user, that is the last order that method did not delete.
         $latestOrder = $orders->first();
 
-        // Возвращаем заказы в виде коллекции
         return response()->json([
             'message' => 'Unconfirmed orders retrieved successfully',
             'orders' => new OrderCollection(collect([$latestOrder])),
@@ -98,44 +113,59 @@ class OrderController extends Controller
         ], 200);
     }
 
+    /**
+     * Get unordered order for another controller
+     * That is useful in the OrderProductQuantityController
+     * 
+     * @param int $id
+     * @return Order
+     */
     public function getUnorderedOrderForAnotherController($id)
     {
-        // Проверяем, существует ли пользователь с указанным ID
         $user = User::find($id);
         if (!$user) {
-            return null; // Возвращаем null, если пользователь не найден
+            return null; 
         }
 
-        // Получаем заказы со статусом "UNCONFIRMED" для указанного пользователя
+         // In this method, we only want to return orders with status 'UNORDERED'.
+        // Order with this status works as a cart, so we only want to return the last one.
         $orders = Order::where('user_id', $id)
             ->where('status', 'UNORDERED')
             ->get();
 
-        // Проверяем, есть ли такие заказы
         if ($orders->isEmpty()) {
-            return null; // Возвращаем null, если нет заказов
+            return null; 
         }
 
-        // Если заказов больше одного, удаляем все кроме первого
+        // There should be only one UNORDERED order at a time.
+        // Check if there are more than one and delete all but not the first one.
+        // User will have only one cart at a time.
         if ($orders->count() > 1) {
-            $ordersToDelete = $orders->slice(1); // Все, кроме самого последнего
+            $ordersToDelete = $orders->slice(1); 
             foreach ($ordersToDelete as $order) {
-                $order->delete(); // Удаляем заказ
+                $order->delete(); 
             }
         }
 
-        // Получаем последний оставшийся заказ
+         // Recieve the cart of the user, that is the last order that method did not delete.
         $latestOrder = $orders->first();
 
-        // Возвращаем только последний заказ
-        return $latestOrder; // Возвращаем сам заказ, а не ответ в формате JSON
+
+        return $latestOrder; 
     }
 
 
-
+    /**
+     * Store a newly created order in storage.
+     * It will be unordered by default, because it will work like a card
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $userAuth = Auth::user();
+        // Only registered users can create orders (cart)
         if($userAuth['role'] != 'reg_user'){
             return response()->json(['message' => 'You dont have access with your role'], 403);
         }
@@ -144,9 +174,12 @@ class OrderController extends Controller
             return [Str::snake($key) => $value];
         })->toArray();
 
+        // Add user_id to the input, that is the user who created the order(cart).
+        // Total price is 0 by default, because it does not have items to but yet.
         $input['user_id'] = $userAuth->id;
         $input['total_price'] = '0';
-     
+        
+        // If status is not set, set it to 'UNORDERED' or if it is set, check if it is 'UNORDERED'.
         if(isset($input['status'])){
             if( $input['status'] != 'UNORDERED') {
                 return response()->json(['message' => 'Order while create must be unordered'], 403);
@@ -177,6 +210,12 @@ class OrderController extends Controller
         
     }
 
+    /**
+     * Display the specified order.
+     *
+     * @param int $id
+     * @return OrderResource
+     */
     public function show($id)
     {
         $order = Order::find($id);
@@ -191,7 +230,12 @@ class OrderController extends Controller
 
     }
 
-
+    /**
+     * Update the specified order in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request)
     {
         $userAuth = Auth::user();
@@ -201,15 +245,15 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found', 'code' => 404], 404);
         }
 
-        // Проверка, что запрос не меняет status
+        // Check if status is not changing directly, because it is not allowed.
         if (isset($request->status)) {
             return response()->json(['message' => 'You cannot change the status directly'], 403);
         }
 
-        // Обновление description и address
+        // Update method is only for updating description and address.
         $input = $request->only(['description', 'address']);
 
-        // Проверка на обязательные поля
+        // Adress is required to update.
         if(!isset($input['address'])){
             return response()->json(['message' => 'Address is required'], 400);
         }
@@ -217,7 +261,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Address is required'], 400);
         }
 
-        // Обновляем только description и address
+        // Chaning the description and address.
         if (isset($input['description'])) {
             $order->description = $input['description'];
         }
@@ -226,18 +270,26 @@ class OrderController extends Controller
             $order->address = $input['address'];
         }
 
-        // Сохраняем изменения
         $order->save();
 
         return response()->json(['message' => 'Order updated successfully', 'code' => 200], 200);
     }
 
+    /**
+     * Update the specified order status to 'ORDERED'.
+     * It is used when user orders the cart.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateOrderStatusToOrdered(Request $request, $id)
     {
         $order = Order::find($id);
         $userAuth = Auth::user();
         $input = $request->only(['address']);
 
+        // Only user that created the order(cart) can order it.
         if($order->user_id != $userAuth['id']){
             return response()->json(['message' => 'You dont have access to orders from another users'], 403);
         } 
@@ -248,10 +300,10 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found', 'code' => 404], 404);
         }
 
-        // Меняем статус на 'ORDERED'
+        /// Changing the status to 'ORDERED'
         $order->status = 'ORDERED';
         
-        // Если адрес был передан, обновляем его
+        // If address is not set yet, it should be set now when user orders the cart.
         if (empty($order->address)) {
             if(empty($input['address'])){
                 return response()->json([
@@ -262,23 +314,31 @@ class OrderController extends Controller
             $order->address = $input['address'];
         }
 
+        // Setting the order date to current date.
+        // Order date is taking now while processing this method.
         $currentTimestamp = now();
         $order->order_date = $currentTimestamp; 
-        // Сохраняем изменения в заказе
         $order->save();
 
-        // Обновляем статус всех связанных записей в order_product_quantity на 'ordered'
+        // After changing the status to 'ORDERED', we need to change the status of all order_product_quantity to 'UNCONFIRMED'.
+        // Because now the order is ordered and Farmers need to confirm the order_product_quantity(value of their products that user ordered).
 
         $OPQcontroller = new OrderProductQuantityController();
 
-        // Call the function
+        // Call the function to do it in OrderProductQuantityController.
         $OPQcontroller->changeOrderProductQuantityStatusToUnconfirmed($order->id);
 
         return response()->json(['message' => 'Order status updated to ordered', 'code' => 200], 200);
     }
-
-    // Функция для изменения статуса всех order_product_quantity на 'ordered'
-    
+     
+    /**
+     * Remove the specified order from storage.
+     * In our implementation it is not used, because order will be deleted when users are emptying their cart
+     * In other cases, when order has status ORDERED, it should be forever in your database for customers convenience.    
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
         $order = Order::find($id);
@@ -300,6 +360,12 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Validate the input for creating a new order.
+     * 
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     public function validator_create($data) {
         return Validator::make($data, [
             'total_price' => 'required|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
@@ -311,6 +377,12 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Validate the input for updating an order.
+     * 
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     public function validator_update($data) {
         return Validator::make($data, [
             'total_price' => 'nullable|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
