@@ -15,29 +15,40 @@ class CategorySeeder extends Seeder
     {
        
         $proparent = Category::factory()->create([
-            'name' => 'Plodina',
+            'name' => 'Crop',
             'is_final' => false
         ]);
         $parent1 = Category::factory()->create([
-            'name' => 'Zelenina',
+            'name' => 'Vegetables',
             'parent_id' => $proparent->id,
             'is_final' => false
         ]);
         $child = Category::factory()->create([
-            'name' => 'Mrkev',
+            'name' => 'Carrot',
+            'parent_id' => $parent1->id,
+            'is_final' => true
+        ]);
+        $child = Category::factory()->create([
+            'name' => 'Potato',
             'parent_id' => $parent1->id,
             'is_final' => true
         ]);
         $parent2 = Category::factory()->create([
-            'name' => 'Ovoce',
+            'name' => 'Fruits',
             'parent_id' => $proparent->id,
             'is_final' => false
         ]);
         $child = Category::factory()->create([
-            'name' => 'Jablko',
+            'name' => 'Apple',
             'parent_id' => $parent2->id,
             'is_final' => true
         ]);
+        $child = Category::factory()->create([
+            'name' => 'Banana',
+            'parent_id' => $parent2->id,
+            'is_final' => true
+        ]);
+
         $child = Category::factory()->create([
             'name' => 'Jablko',
             'parent_id' => null,

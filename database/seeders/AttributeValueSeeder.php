@@ -26,7 +26,6 @@ class AttributeValueSeeder extends Seeder
                 'attribute_id' => 1,
                 'product_id' => $product->id, 
             ]);
-
             AttributeValue::factory()->create([
                 'value' => $faker->randomElement(['Mogilev', 'Astrakhan', 'Tiraspol']),
                 'attribute_id' => 3,

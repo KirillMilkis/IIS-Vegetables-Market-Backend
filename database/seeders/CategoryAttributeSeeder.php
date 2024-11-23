@@ -18,7 +18,6 @@ class CategoryAttributeSeeder extends Seeder
             'attribute_id' => 2,
             'is_required' => true,
         ]);
-
         CategoryAttribute::create([
             'category_id' => 1,
             'attribute_id' => 3,
