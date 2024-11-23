@@ -26,12 +26,12 @@ class User extends Authenticatable
         return $this->hasMany(Product::class, 'farmer_id');
     }
 
-    public function selfHarvestingsVisits()
+    public function self_harvestings_visits()
     {
         return $this->belongsToMany(SelfHarvesting::class);
     }
 
-    public function selfHarvestingsPlanned()
+    public function self_harvestings_planned()
     {
         return $this->hasMany(SelfHarvesting::class, 'farmer_id');
     }

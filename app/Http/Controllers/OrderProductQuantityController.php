@@ -334,7 +334,7 @@ class OrderProductQuantityController extends Controller
     public function updateTotalPriceInOrder($order)
     {
         // Получаем все OrderProductQuantity для этого заказа
-        $orderProductQuantities = $order->orderProductQuantities;
+        $orderProductQuantities = $order->order_product_quantities;
     
         // Рассчитываем общую стоимость
         $totalPrice = $orderProductQuantities->sum('price');
@@ -427,7 +427,7 @@ class OrderProductQuantityController extends Controller
 
             $this->updateTotalPriceInOrder($order);
 
-            if ($order->orderProductQuantities->isEmpty()) {
+            if ($order->order_product_quantities->isEmpty()) {
                 $order->delete();
                 return response()->json([
                     'message' => 'OrderProductQuantity deleted and order deleted (last item)',
@@ -457,7 +457,7 @@ class OrderProductQuantityController extends Controller
         }
 
         // Обновляем статус всех связанных записей в order_product_quantity на 'ordered'
-        $orderProductQuantities = $order->orderProductQuantities; // Предполагаем, что связь с order_product_quantity установлена
+        $orderProductQuantities = $order->order_product_quantities; // Предполагаем, что связь с order_product_quantity установлена
 
         foreach ($orderProductQuantities as $orderProductQuantity) {
             // Меняем статус на 'ordered'

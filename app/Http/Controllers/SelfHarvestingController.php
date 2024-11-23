@@ -31,7 +31,7 @@ class SelfHarvestingController extends Controller
         }
 
         // Получить привязанные записи SelfHarvesting
-        $selfHarvestings = $user->selfHarvestingsVisits()->get();
+        $selfHarvestings = $user->self_harvestings_visits()->get();
 
         if ($selfHarvestings->isEmpty()) {
             return response()->json(['message' => 'No SelfHarvesting records found for this user', 'code' => 204], 204);
@@ -57,7 +57,7 @@ class SelfHarvestingController extends Controller
         }
 
         // Получить привязанные записи SelfHarvesting
-        $selfHarvestings = $user->selfHarvestingsPlanned()->get();
+        $selfHarvestings = $user->self_harvestings_planned()->get();
 
         if ($selfHarvestings->isEmpty()) {
             return response()->json(['message' => 'No SelfHarvesting records found for this user', 'code' => 204], 204);

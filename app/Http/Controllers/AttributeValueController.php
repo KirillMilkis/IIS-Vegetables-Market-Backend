@@ -40,10 +40,6 @@ class AttributeValueController extends Controller
         $attribute = Attribute::find($attributeId);
 
 
-        // if ($attribute->value_type !== 'PLACE' || !$attribute) {
-        //     return response()->json(['message' => 'Attribute is not of type PLACE', 'code' => 400], 400);
-        // }
-
         $attributeValues = AttributeValue::where('attribute_id', $attributeId)->get();
 
         if ($attributeValues->isEmpty()) {
@@ -170,18 +166,18 @@ class AttributeValueController extends Controller
 
     public function updateAttributeValuesFromProductController($productId, $attributeValueData)
     {
-        // Проверка на существование записи AttributeValue
+        
         $attributeValue = AttributeValue::where('product_id', $productId)
             ->where('attribute_id', $attributeValueData['attribute_id'])
             ->first();
 
         if ($attributeValue) {
-            // Обновляем существующее значение
+            
             $attributeValue->update([
                 'value' => $attributeValueData['value'],
             ]);
         } else {
-            // Создаем новую запись, если её нет
+            
             AttributeValue::create([
                 'product_id' => $productId,
                 'attribute_id' => $attributeValueData['attribute_id'],

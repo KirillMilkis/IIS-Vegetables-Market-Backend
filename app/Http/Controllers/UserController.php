@@ -196,7 +196,7 @@ class UserController extends Controller
             return response()->json(['message' => 'SelfHarvesting not found', 'code' => 404], 404);
         }
         // Привязать SelfHarvesting к пользователю
-        $authUser->selfHarvestingsVisits()->syncWithoutDetaching([$selfHarvestingId]);
+        $authUser->self_harvestings_visits()->syncWithoutDetaching([$selfHarvestingId]);
 
         return response()->json([
             'message' => 'SelfHarvesting(s) attached successfully',
@@ -225,7 +225,7 @@ class UserController extends Controller
         }
 
         // Удалить связь SelfHarvesting с пользователем
-        $authUser->selfHarvestingsVisits()->detach($selfHarvestingId);
+        $authUser->self_harvestings_visits()->detach($selfHarvestingId);
 
         return response()->json([
             'message' => 'SelfHarvesting(s) detached successfully',

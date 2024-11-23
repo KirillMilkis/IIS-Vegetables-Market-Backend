@@ -17,13 +17,13 @@ class UserSeeder extends Seeder
     {
         User::factory(10)->create();
         User::factory()->create([
-            'username' => 'pidoras',
-            'password' => bcrypt('12345678'),
+            'username' => 'admin',
+            'password' => bcrypt('admin'),
             'role' => 'admin',
         ]);
         User::factory()->create([
-            'username' => 'username',
-            'password' => bcrypt('password'),
+            'username' => 'user',
+            'password' => bcrypt('user'),
             'role' => 'reg_user',
         ]);
         User::factory()->create([
