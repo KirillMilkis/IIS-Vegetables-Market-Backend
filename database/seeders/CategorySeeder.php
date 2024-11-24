@@ -50,8 +50,8 @@ class CategorySeeder extends Seeder
         ]);
 
         $child = Category::factory()->create([
-            'name' => 'Jablko',
-            'parent_id' => null,
+            'name' => 'Strawberry',
+            'parent_id' => 5,
             'is_final' => true,
             'status' => 'PROCESS'
         ]);

@@ -20,7 +20,7 @@ class SelfHarvestingFactory extends Factory
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
             'date_time' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'location' => $this->faker->word,
+            'location' => $this->faker->address,
             'product_id' => \App\Models\Product::inRandomOrder()->first()->id,
             'farmer_id' => \App\Models\User::inRandomOrder()->first()->id,
 

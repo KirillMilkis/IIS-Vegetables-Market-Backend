@@ -96,7 +96,7 @@ class AttributeController extends Controller
 
     /**
      * Store a newly created attribute in storage.
-     * But our implementation in frontend does not allow to create new attribute.
+     * But our implementation directly in frontend does not allow to create new attribute.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -104,6 +104,12 @@ class AttributeController extends Controller
 
     public function store(Request $request)
     {
+
+        $authUser = Auth::user();
+        if($authUser['role'] != 'moderator'){
+            return response()->json(['message' => 'You dont have access with your role'], 403);
+        }
+
        $input = collect($request -> all())->mapWithKeys(function ($value, $key) {
             return [Str::snake($key) => $value];
         })->toArray();
@@ -151,7 +157,7 @@ class AttributeController extends Controller
 
     /**
      * Update the specified attribute in storage.
-     * But our implementation in frontend does not allow to update attribute.
+     * But our implementation directly in frontend does not allow to update attribute.
      * 
      * @param Request $request
      * @param int $id
@@ -159,6 +165,11 @@ class AttributeController extends Controller
      */
     public function update(Request $request, $id)
     {
+
+        $authUser = Auth::user();
+        if($authUser['role'] != 'moderator'){
+            return response()->json(['message' => 'You dont have access with your role'], 403);
+        }
         
         $attribute = Attribute::find($id);
 

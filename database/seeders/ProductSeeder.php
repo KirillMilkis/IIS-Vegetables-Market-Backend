@@ -17,42 +17,42 @@ class ProductSeeder extends Seeder
         Product::factory()->create([
             'name' => 'Red Delicious',
             'category_id' => 6,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.thespruceeats.com%2Fapple-varieties-guide-1135596&psig=AOvVaw3QuGPRMM36_02xC4_d6eqU&ust=1732480873006000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCNCp8Kmo84kDFQAAAAAdAAAAABAE'
+            'image_root' => 'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQisTcRVt1u7-IprpoGwAL1A5_YTCOBH6ug3LjLc6QLFgcTMKyzzmlLpSsanhlJ5SOpp-7_5MJ_mpjfjc0M_RY1mQ'
         ]);
         Product::factory()->create([
             'name' => 'Golden Delicious',
             'category_id' => 6,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwaapple.org%2Fvarieties%2Fgolden-delicious%2F&psig=AOvVaw3QuGPRMM36_02xC4_d6eqU&ust=1732480873006000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCNCp8Kmo84kDFQAAAAAdAAAAABAE'
+            'image_root' => 'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcRtGyiWtBNNHHMpPTw0EMAvrh3X07SDUeAjRgL7uJkShduapLZarwldBguVOaeR4TUNVbihwIhplp1I60x0Nso0jw'
         ]);
         Product::factory()->create([
-            'name' => 'Cavendish Banana',
+            'name' => 'Cavendish',
             'category_id' => 7,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Ftewantinmarketgarden.com%2Fshop%2Ffruit%2Fbanana-cavendish-per-kg%2F&psig=AOvVaw3BFHSAK7MDmHbeb7L0K__c&ust=1732480918583000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCIjGzcKo84kDFQAAAAAdAAAAABAE'
+            'image_root' => 'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcT9UowXH5qO4don2Ve4tSokiCJg5SIV9anBTOdIeprSlRdMwsau5r087WprVKPU7v9yD89iZvn-YYVr4A36Oe1HlQ'
         ]);
         Product::factory()->create([
-            'name' => 'Lady Finger Banana',
+            'name' => 'Lady Finger',
             'category_id' => 7,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fgreensmithgrocers.com.au%2Fproduct%2Forganic-lady-finger-bananas%2F&psig=AOvVaw3-UqM_xh9MUeqTKoSf5uOX&ust=1732480961002000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCJCe2NWo84kDFQAAAAAdAAAAABAE'
+            'image_root' => 'https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcR7UfwkjJ2EXptGih775Y78UGF19NuDONmXesYbNoiww-A51JH9YL7tRc-ED1uGPwk8KTET'
         ]);
         Product::factory()->create([
-            'name' => 'nantes',
+            'name' => 'Nantes',
             'category_id' => 3,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.ritchiefeed.com%2Fproducts%2Fscarlet-nantes-carrot-seeds&psig=AOvVaw3JEoiWSh2kmUgPIl3keJ-d&ust=1732481031218000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCPiAn_qo84kDFQAAAAAdAAAAABAQ'
+            'image_root' => 'https://www.ritchiefeed.com/cdn/shop/files/carrot-scarlet-nantes-carotte-scarlet-nantes-tourne-sol-organic-seeds-106066_720x.png?v=1715615826'
         ]);
         Product::factory()->create([
             'name' => 'Danvers',
             'category_id' => 3,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fhudsonvalleyseed.com%2Fproducts%2Fdanvers-carrot&psig=AOvVaw1HQlQmfM-6GU7T_bFmW0Zd&ust=1732481082502000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOCGt46p84kDFQAAAAAdAAAAABAE'
+            'image_root' => 'https://www.sandiaseed.com/cdn/shop/products/Organic-Carrot-Seeds-Danvers_6e14089b-306b-41a5-9b85-b283edf5168f.jpg?v=1690240903&width=416'
         ]);
         Product::factory()->create([
             'name' => 'Russet',
             'category_id' => 4,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.thespruceeats.com%2Fpotato-varieties-2215971&psig=AOvVaw3J9Z6'
+            'image_root' => 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlDLVgnqKiTCg8uSTIYNda59XoqQf9gf7sdw&s'
         ]);
         Product::factory()->create([
             'name' => 'Yukon Gold',
             'category_id' => 4,
-            'image_root' => 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.thespruceeats.com%2Fpotato-varieties-2215971&psig=AOvVaw3J9Z6'
+            'image_root' => 'https://www.kroger.com/product/images/xlarge/front/0000000004727'
         ]);
 
 

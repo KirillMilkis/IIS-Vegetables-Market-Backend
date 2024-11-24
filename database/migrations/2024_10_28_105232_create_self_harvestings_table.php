@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 50);
             $table->string('description', 255);
             $table->timestamp('date_time');
-            $table->string('location', 50);
+            $table->string('location', 100);
             $table->unsignedBigInteger('farmer_id');
             $table->unsignedBigInteger('product_id');
             $table->foreign('farmer_id')->references('id')->on('users')->onDelete('cascade');

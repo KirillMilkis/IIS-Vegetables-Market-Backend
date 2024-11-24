@@ -13,14 +13,24 @@ class CategoryAttributeSeeder extends Seeder
      */
     public function run(): void
     {
-        CategoryAttribute::factory()->create([
-            'category_id' => 4,
-            'attribute_id' => 2,
+        CategoryAttribute::create([
+            'category_id' => 1,
+            'attribute_id' => 3,
+            'is_required' => false,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 1,
+            'attribute_id' => 1,
             'is_required' => true,
         ]);
         CategoryAttribute::create([
             'category_id' => 1,
-            'attribute_id' => 3,
+            'attribute_id' => 4,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 1,
+            'attribute_id' => 5,
             'is_required' => true,
         ]);
         CategoryAttribute::create([
@@ -30,13 +40,8 @@ class CategoryAttributeSeeder extends Seeder
         ]);
         CategoryAttribute::create([
             'category_id' => 2,
-            'attribute_id' => 2,
-            'is_required' => true,
-        ]);
-        CategoryAttribute::create([
-            'category_id' => 2,
             'attribute_id' => 3,
-            'is_required' => false,
+            'is_required' => true,
         ]);
         CategoryAttribute::create([
             'category_id' => 2,
@@ -46,8 +51,109 @@ class CategoryAttributeSeeder extends Seeder
         CategoryAttribute::create([
             'category_id' => 2,
             'attribute_id' => 5,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 3,
+            'attribute_id' => 1,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 3,
+            'attribute_id' => 3,
             'is_required' => false,
         ]);
+        CategoryAttribute::create([
+            'category_id' => 3,
+            'attribute_id' => 4,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 3,
+            'attribute_id' => 5,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 4,
+            'attribute_id' => 1,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 4,
+            'attribute_id' => 3,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 4,
+            'attribute_id' => 4,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 4,
+            'attribute_id' => 5,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 5,
+            'attribute_id' => 1,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 5,
+            'attribute_id' => 3,
+            'is_required' => false,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 5,
+            'attribute_id' => 4,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 5,
+            'attribute_id' => 5,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 6,
+            'attribute_id' => 1,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 6,
+            'attribute_id' => 3,
+            'is_required' => false,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 6,
+            'attribute_id' => 4,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 6,
+            'attribute_id' => 5,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 7,
+            'attribute_id' => 2,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 7,
+            'attribute_id' => 3,
+            'is_required' => false,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 7,
+            'attribute_id' => 4,
+            'is_required' => true,
+        ]);
+        CategoryAttribute::create([
+            'category_id' => 7,
+            'attribute_id' => 5,
+            'is_required' => true,
+        ]);
+
 
 
 

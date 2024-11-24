@@ -16,7 +16,7 @@ class AttributeValueController extends Controller
 {
 
     /**
-     * Display a listing of the a.
+     * Display a listing of the attributeValues.
      *
      * @return AttributeValueCollection
      */
@@ -112,6 +112,8 @@ class AttributeValueController extends Controller
 
     /**
      * Store a newly created attributeValue in storage.
+     * In our implementation for convenience attributeValue can be created by productController.
+     * Products are needed attributeValues as soon as they are created.
      *
      * @param Request $request
      * @return JsonResponse
@@ -163,6 +165,8 @@ class AttributeValueController extends Controller
 
     /**
      * Update the specified attributeValue in storage.
+     * In our implementation for convenience attributeValue can be updated by productController.
+     * Products are needed attributeValues as soon as they are created.
      *
      * @param Request $request
      * @param int $id
