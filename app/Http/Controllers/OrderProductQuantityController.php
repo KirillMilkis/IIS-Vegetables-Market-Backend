@@ -134,7 +134,7 @@ class OrderProductQuantityController extends Controller
         // Find the order that is not yet confirmed for the user
         // This order that is gonna be found is used like a cart.
         // Add to this card the product that user wants to order.
-        $orderController = new OrderController(); // создаем экземпляр класса
+        $orderController = new OrderController(); 
         $order = $orderController->getUnorderedOrderForAnotherController($userAuth['id']);
         if (!$order) {
             return response()->json([
@@ -314,7 +314,7 @@ class OrderProductQuantityController extends Controller
         $orderProductQuantity->quantity = $newQuantity;
 
 
-        // Get the price forr the new quantity of product.
+        // Get the price for the new quantity of product.
         $price = $this->calculateProductPrice($orderProductQuantity->product_id, $input['quantity']);
 
         // Update the filed price.

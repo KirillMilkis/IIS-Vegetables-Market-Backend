@@ -270,7 +270,7 @@ class CategoryController extends Controller
                 CategoryAttribute::create([
                     'category_id' => $category->id,
                     'attribute_id' => $attribute['id'],
-                    'is_required' => $attribute['required'] ?? false, // Значение по умолчанию — false
+                    'is_required' => $attribute['required'] ?? false, 
                 ]);
             }
         }

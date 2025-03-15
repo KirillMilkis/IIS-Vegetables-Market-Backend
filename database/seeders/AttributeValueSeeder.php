@@ -32,7 +32,7 @@ class AttributeValueSeeder extends Seeder
                 'product_id' => $product->id,
             ]);
             AttributeValue::factory()->create([
-                'value' => $faker->randomElement(['22-03-2025', '22-05-2025', '22-07-2025']),
+                'value' => $faker->randomElement(['2025-03-10', '2025-04-20', '2025-05-89']),
                 'attribute_id' => 5,
                 'product_id' => $product->id,
             ]);

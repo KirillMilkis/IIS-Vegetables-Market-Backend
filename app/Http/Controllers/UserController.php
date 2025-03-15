@@ -340,7 +340,7 @@ class UserController extends Controller
             'firstname' => 'required|string|max:32',
             'lastname' => 'required|string|max:32',
             'address' => 'nullable|string|max:100',
-            'password' => 'nullable|string|min:8|max:32', // Для обновления пароля
+            'password' => 'nullable|string|min:8|max:32', 
             'email' => ['nullable','string','max:255','email',Rule::unique('users')->ignore($user->id),],
             'phone' => 'nullable|string|max:255',
             'role' => 'nullable|string|in:reg_user,moderator,admin',

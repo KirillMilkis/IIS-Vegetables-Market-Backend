@@ -1,0 +1,235 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+  	<meta charset="UTF-8">
+    <meta http-equiv="content-type" content="text/html; charset=iso-8859-2"/>
+    <title>Projekt IIS</title>
+    <style type="text/css">
+    	table { border-collapse: collapse; }
+    	td, th { border: 1px solid black; padding: 0.3em 0.5em; text-align: left; }
+    	dt { font-weight: bold; margin-top: 0.5em; }
+    </style>
+</head>
+<body>
+
+<!-- Zkontrolujte prosím nastavení kódování v hlavičce dokumentu 
+     podle použitého editoru -->
+
+<h1>Zelný trh</h1> <!-- Nahradte názvem svého zadání -->
+
+<dl>
+	<dt>Autoři</dt>
+	<dd>Alexandr Tihanschi <!-- Nahraďte skutečným jménem a e-mailem autora a popisem činnosti -->
+	    <a href="mailto:xtihan00@stud.fit.vutbr.cz">xtihan00@stud.fit.vutbr.cz</a> -
+		frontend, analiza a planovani
+	</dd>
+	<dd>Kirill Kurakov <!-- Nahraďte skutečným jménem a e-mailem autora a popisem činnosti -->
+	    <a href="mailto:xkurak03@stud.fit.vutbr.cz">xkurak03@stud.fit.vutbr.cz</a> - 
+		backend, dokumentace
+	</dd>
+  <dd>Dzianis Pilipenka <!-- Nahraďte skutečným jménem a e-mailem autora a popisem činnosti -->
+	    <a href="mailto:xpilip00@stud.fit.vutbr.cz">xpilip00@stud.fit.vutbr.cz</a> - 
+		frontend, dokumentace, video
+	</dd>
+	<dt>URL aplikace</dt>
+	<dd><a href="https://www.stud.fit.vutbr.cz/~xpilip00/IIS/" target="_blank">https://www.stud.fit.vutbr.cz/~xpilip00/IIS/</a></dd>
+</dl>
+
+<h2>Uživatelé systému pro testování</h2>
+
+<table>
+<tr><th>Login</th><th>Heslo</th><th>Role</th></tr>
+<tr><td>admin</td><td>admin</td><td>Administrátor</td></tr>
+<tr><td>moder</td><td>moder</td><td>Moderátor</td></tr>
+<tr><td>user</td><td>user</td><td>Uživatel</td></tr>
+</table>
+
+
+<h3>Video</h3>
+
+<p>Video demonstrující použití aplikace: <a href="https://www.youtube.com/watch?v=a_g-N6VQo98" target="_blank">https://www.youtube.com/watch?v=a_g-N6VQo98</a></p>
+
+<h2>Implementace</h2>
+  <p>
+<p>
+  Projekt realizuje webovou stránku (front end, back end) obchodu se zeleninou. Naším úkolem bylo implementovat CRUD operace v pohodlné formě s možností pohodlného a promyšleného filtrování. Pozornost jsme věnovali také validaci dat (jak na front endu, tak na back endu), kontrole oprávnění uživatelů, aby neregistrovaný uživatel nemohl například smazat produkt, a zachování konzistence databáze. Snažili jsme se promyslet a implementovat co nejvíce hraničních momentů (pokus o přidání do košíku o množství výrobku větší, než je na skladě, a podobně). Implementovali jsme všechny funkce případu užití uvedené v zadání, ale možná jsme nestihli během několika okamžiků implementovat vhodné zobrazení (například filtrování událostí podle nadcházejících nebo bývalých)
+
+    </p>
+
+    <h2>Implementace (backend)</h2>
+<p>
+	Backend projektu byl implementován ve frameworku laravel verze 8.83.28 s použitím php verze 8.1, aby backend bez problémů běžel na serveru Eva(žádá o php verze 8.1, je možné změnit verzi, ale to nefungovalo s Laravel.). Technologie backendu je REST API. Server slouží ke zpracování a ukládání dat a není zodpovědný za vizuální složku.
+  </p>
+  <p>
+Struktura backendu obsahuje standardní strukturu frameworku laravel. V popisu se dále uvádí soubory projektu, které jsme vytvořili (nezahrnuje soubory ze šablony laravel, kterých jsme se nedotkli). Databáze je implementována pomocí migrací, existují seedery a továrny pro vytváření ukázkových dat(/database/). Adresa URL pro přístup k metodám zpracování dat a jejich načítání se nachází v souboru routes/api.php. Ve složce app jsou modely založené na tabulkách z databáze app/Models. Ve složce app/Http jsou implementovány Http/Resources pro vracení dat při požadavcích ve správném případě pro formát JSON a také kontroléry, ve kterých je definována logika provádění dotazů.Dále si popíšeme jednotlivé kontrolery a klíčové body implementace s nimi spojené, popis scénářů. 
+  </p>
+  <p>
+<b>AttributeController.php</b> - logika pro požadavky týkající se atributů.Atributy v našem projektu jsou konstantní, protože bylo rozhodnuto, že u ovoce a zeleniny budou přibližně stejné atributy pro všechny zboží: cena za kilogram nebo cena za kus, místo původu, počet jednotek zboží .<br> Z frontendu není možné přidávat nové atributy, ačkoli k tomu existují funkce v backendu.<br> Produkt bude mít buď cenu za kilogram, nebo cenu za kus, záleží na atributech, které jsou spojeny s kategorií, v níž se produkt nachází. 
+  </p>
+  <p>
+    <b>AttributeValueController.php</b> - logika pro dotazy týkající se znalostí atributů pro produkt. Pro větší pohodlí se v našem projektu přímo nemění. Měníme je při vytváření nových produktů a při změně produktů v productController.
+  </p>
+  <p>
+    <b>AuthController.php</b> - logika související s autorizací a registrací uživatelů. 
+  </p>
+  <p>
+    <b>CategoryController.php</b> - logika související s kategoriemi, ve kterých jsou umístěny produkty. Kategorie lze navrhovat, mohou je navrhovat běžní uživatelé a moderátoři je mohou schvalovat. Pokud však kategorii navrhne moderátor, bude okamžitě „CONFIRMED“. Tato logika vytváření a aktualizace stavu kategorie je implementována v tomto kontroléru.<br> Kategorie lze také filtrovat podle názvu, atributů, které jsou s nimi spojeny, nebo pokud nezadáte název a atributy můžete získat podřízené kategorie každé nadřazené kategorie.<br> Mezi atributy a kategoriemi je také tabulka mezi atributy a kategoriemi, která určuje, zda je atribut pro určitou kategorii povinný. Nemá vlastní kontroler.
+  </p>
+  <p>
+    <b>OrderController.php</b> - logika související s objednávkami a nákupním košíkem. Order s typem 'UNORDERED' je košík pro produkty. Stav Order se může změnit na „ORDERED“ a pak se z ní stane skutečná objednávka, kterou lze vyzvednout v seznamu takto potvrzených objednávek. 
+  </p>
+  <p>
+    <b>OrderProductQuantityController.php</b> - logika týkající se počtu produktů v košíku a pořadí, které uživatel vybral k nákupu.  Při přidávání a odebírání a změně počtu produktů se zohledňuje cena určitého počtu produktů, kterou lze převzít z tabulky AttributeValue, a počet jednotek produktu farmáře, který lze rovněž převzít z AttributeValue. <br> Přepočítává se také celková cena košíku, což je záznam v tabulce Order ve stavu „UNORDERED“. Dále lze z tohoto kontroléru převzít také seznam produktů, kteří si u farmáře objednali(záznam v tabulce orderProductQuantity).<br> Farmář může změnit stav záznamu v tabulce OrderProductQuantity na 'CONFIRMED' a 'SHIPPED'.
+  </p>
+  <p>
+    <b>ProductController.php</b> - Logika související s produkty. Při přidávání produktu je třeba nezapomenout zadat hodnoty atributů, které souvisejí s danou kategorií. Také atribut může být pro tuto kategorii povinný a může být nepovinný a pak může být zadán, ale není povinný. Při změně toho, které atributy jsou s kategorií spojeny, a následné aktualizaci výrobku bude nutné přidat k výrobku nové atributy, pokud jsou povinné.Produkty lze filtrovat podle názvu, kategorie a hodnot atributů.
+  </p>
+  <p>
+    <b>ReviewController.php</b> - logika související s hodnocením produktů.
+  </p>
+  <p>
+    <b>SelfHarvestingController.php</b> - logika související se samosbery produktů, které zemědělci plánují sklidit. Každý zemědělec, který má produkty, si může vytvořit vlastní samosběr.<br> Každý registrovaný uživatel si může přidat samosběr do seznamu událostí.
+  </p>
+  <p>
+    <b>UserController.php</b> - logika související s uživatelskými profily na webu. Administrátoři mohou přidávat nové moderátory a upravovat běžné registrované uživatele a mazat. 
+  </p>
+
+  
+
+
+<h3>Databáze</h3>
+<img src="DB_scheme.png" alt="Schéma relační databáze">
+
+<h2>Instalace</h2>
+
+  
+  <h3>Průvodce instalací backendu projektu na lokální server</h3>
+
+    <h2>1. Požadavky</h2>
+    <p>Ujistěte se, že máte nainstalovaný následující software:</p>
+    <ul>
+        <li><strong>PHP:</strong> Verze 8.1 nebo novější</li>
+        <li><strong>Composer:</strong> Pro správu PHP závislostí</li>
+        <li><strong>MySQL:</strong> Verze 8.0 nebo novější</li>
+        <li><strong>Webový server:</strong> Apache, Nginx nebo integrovaný server Laravel</li>
+        <li><strong>Archivovací nástroj:</strong> Pro extrakci archivu</li>
+    </ul>
+  	Doporučení:
+  	Použijte vývojové prostředí jako [Laragon](https://laragon.org/)
+
+    <h2>2. Rozbalení archivu</h2>
+  <p>Stáhněte archiv projektu a rozbalte ho do preferované složky
+  např: /projects/iis-market-be (Laragon)</p>
+		
+    <h2>3. Instalace závislostí</h2>
+    <p>Otevřete terminál, přejděte do rozbalené složky projektu a spusťte:</p>
+    <pre>
+cd cesta/k/iis-market-be
+composer install
+    </pre>
+    <p>Tím se nainstalují všechny potřebné PHP balíčky.</p>
+
+    <h2>4. Konfigurace prostředí</h2>
+    <p>Nastavte proměnné prostředí:</p>
+    <ol>
+        <li>Zkopírujte soubor prostředí:</li>
+        <pre>cp .env.example .env</pre>
+        <li>Otevřete soubor <code>.env</code> v textovém editoru a nakonfigurujte následující:</li>
+        <pre>
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=nazev_databaze
+DB_USERNAME=uzivatel
+DB_PASSWORD=heslo
+        </pre>
+        <li>Vygenerujte aplikační klíč:</li>
+        <pre>php artisan key:generate</pre>
+    </ol>
+
+    <h2>5. Inicializace databáze</h2>
+    <ol>
+        <li>Vytvořte novou databázi v MySQL:</li>
+        <pre>
+CREATE DATABASE nazev_databaze CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        </pre>
+        <li>Spusťte migrace a naplňte databázi daty (pokud jsou zahrnuta):</li>
+        <pre>php artisan migrate --seed</pre>
+    </ol>
+
+    <h2>6. Spuštění projektu</h2>
+    <p>Spusťte integrovaný server Laravel:</p>
+    <pre>php artisan serve</pre>
+    <p>Projekt bude dostupný na adrese: <a href="http://localhost:8000" target="_blank">http://localhost:8000</a></p>
+  
+<h2>Implementace (frontend)</h2>
+  <p>
+<p>
+	Frontend byl implementován pomocí React — knihovny pro vytváření uživatelských rozhraní pro webové aplikace. Hlavní body a nástroje, které byly použity v projektu:
+  </p>
+  
+  	<h3>Framework:</h3>
+  <p>
+    <b>React:</b> Hlavní knihovna pro stavbu rozhraní. Použili jsme komponenty a hooky pro správu stavu a zobrazení dat na stránkách aplikace.
+  </p>
+  <h3>Hlavní technologie a knihovny:</h3>
+  <p>
+    <b>1.React Router:</b> Pro navigaci mezi stránkami aplikace byl použit React Router. Tento nástroj usnadňuje správu tras a URL cest, stejně jako předávání parametrů mezi stránkami (například identifikátory).
+  </p>
+  <p>
+    <b>2.Axios:</b> Pro odesílání HTTP požadavků na backend byla použita knihovna Axios. Zjednodušuje práci s asynchronními požadavky, podporuje zpracování chyb a práci s tokeny pro autentifikaci.
+  </p>
+  <p>
+    <b>3.React Context API:</b> Pro globální správu stavu, například pro uchovávání údajů o uživatelském účtu, filtrech produktů a aktuální relaci, bylo použito React Context API. To umožňuje sdílet stav mezi různými komponentami bez nutnosti předávat props na více úrovních.
+  </p>
+  <p>
+    <b>4.React Hooks:</b> Pro správu stavu a vedlejších efektů v komponentách byly použity useState, useEffect a další hooky. Například pomocí useEffect se aktualizují data na obrazovce, když uživatel provádí filtraci produktů.
+  </p>
+  <p>
+    <b>5.LocalStorage:</b>Pro uchovávání údajů o uživatelském účtu, tokenů relací a dalších dat, které by měly být dostupné mezi relacemi, byl použit LocalStorage. To umožňuje uchovávat informace o aktuálním uživatelském účtu a jeho relaci na straně klienta.
+  </p>
+  <h3>Specifika práce s backendem:</h3>
+  <p>
+    <b>1.Autentifikace a tokeny:</b>Při přihlášení nebo registraci je uživateli odeslán token, který je uložen v localStorage na straně klienta. Tento token je následně použit pro autorizaci při odesílání požadavků na backend (například při přidávání produktů do košíku nebo vytváření nových produktů).
+  </p>
+  <p>
+    <b>2.Omezení přístupu na základě rolí uživatelů:</b>Aby byla zajištěna bezpečnost a zabráněno neoprávněnému přístupu k chráněným stránkám aplikace (například /admin-page), byla implementována kontrola práv na základě role uživatele.
+Role aktuálního uživatele (například user, moderator, admin) se ukládá v localStorage nebo spravuje prostřednictvím globálního stavu (např. Context API).
+Pro kontrolu přístupu na stránky byly zavedeny chráněné trasy (Protected Routes). Uživatelé bez potřebných práv jsou přesměrováni na stránku s oznámením o nepovoleném přístupu (/no-access).
+  </p>
+  <p>
+    <b>3.Uchovávání informací o uživatelském účtu:</b>V localStorage jsou uchovávány informace o aktuálním uživatelském účtu, včetně jeho jména a role (například administrátor nebo běžný uživatel). To umožňuje rychlý přístup k těmto informacím, když je to potřeba, a eliminuje nutnost opakovaného přihlašování při každém novém požadavku.
+  </p>
+  <p>
+    <b>4.Práce s filtrací:</b>Produkty jsou zobrazeny v hierarchické struktuře (například ve formě stromu s kategoriemi a podkategoriemi). Při aplikaci filtrů (podle názvu, ceny, atributů) jsou požadavky odesílány na server, který vrací filtrované výsledky. Na frontendu může být filtrace provedena jak na serveru, tak na klientovi — v závislosti na vybraném filtru. Pro filtrování podle atributů nebo názvů produktů mohou být požadavky vykonány pro celou databázi nebo pro část dat, pokud je filtrace provedena přímo na serveru. 
+  </p>
+  <p>
+    <b>5.Dynamické načítání a zobrazení dat:</b>Pro zobrazení produktů s možností jejich filtrování byl použit React rendering s dynamickým aktualizováním uživatelského rozhraní na základě stavu filtrů. To umožňuje uživatelům okamžitě vidět aktualizovaná data bez nutnosti obnovování stránky.
+  </p>
+  <p>
+    <b>6.API a stránkování:</b>Interakce s backendem pro získávání údajů o produktech (například seznamy produktů a kategorií) zahrnuje stránkování. To umožňuje načítání dat po částech, což zlepšuje výkon a usnadňuje použití aplikace.
+  </p>
+  
+  <h3>Závěr:</h3>
+  <p>
+	Projekt byl vyvinut pomocí Reactu, což umožnilo realizovat efektivní interakci s uživatelem, dynamickou aktualizaci uživatelského rozhraní a také flexibilitu při práci s daty prostřednictvím REST API.
+  </p>
+  
+<h2>Instalace (frontend)</h2>
+
+    <h2>1. Rozbalení archivu</h2>
+  <p>Stáhněte archiv projektu a rozbalte ho. Přejděte do složky frontend</p>
+		
+    <h2>2. Instalace závislostí</h2>
+    <pre><code>yarn install</code></pre>
+
+    <h2>3. Spuštění projektu</h2>
+		<pre><code>yarn start</code></pre>
+    <p>Projekt bude dostupný na adrese: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></p>
+
+
+
+</body>
+</html>

@@ -1,64 +1,72 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+## IIS Project - Vegetables Market Website - Backend
+This project is backend for a vegetables market website. This website gives customers the ability to browse, filter, add to cart and order products. Sellers can add their offers, monitor purchases, and manage order statuses. Moderators can adjust product categories and attributes. Admins manage moderators. 
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
 
-## About Laravel
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Features
+1. Attributes and Categories
+Categories that contain products can be added by customers. They have a tree structure. Based on them products can be sorted. Attributes show customer different product characteristics. Products can also be filtered with them.
+2. Product orders
+Products can be ordered by the registered customer. Orders can be monitored and moderated by registered seller.
+3. Events
+Instead of the usual products, sellers can create events where customers can collect goods themselves. Customers can register for them.
+4. Ratings
+Every registered customer can leave a rating with 1 - 5 star and comment for some product.
+### Database structure 
+![ER Diagram](DB_scheme.png)
+To understand database design, an ER diagram was made. This diagram shows which tables exist and how they are related to each other.
+### Installation
+Instruction for project backend installation on the local server.
+1. Requirements
+Make sure you have the following software installed:
+- PHP: Version 8.1 or newer
+- Composer: To manage PHP dependencies
+- MySQL: Verze 8.0 or newer
+- Web server: Apache, Nginx or integrated server Laravel
+- Archiving tool: for archive extraction
+- Recommendation: Use dev environment like [Laragon](https://laragon.org/)
+1. Unpacking the archive
+    Download project archive and unpack it to the preferred folder e.g.: `/projects/iis-market-be (Laragon)`
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+2. Installing dependencies
+    Open a terminal, navigate to the project folder and run:
+    > cd cesta/k/iis-market-be
+    > composer install   
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+    This will install all the necessary PHP packages.
 
-## Learning Laravel
+4. Configuring the environment
+Set environment variables:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+   1. Copy environment file:
+    cp .env.example .env
+   2. Open file .env int a text editor a configure following:
+    `DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=database_name
+    DB_USERNAME=user
+    DB_PASSWORD=password`
+        
+    3. Generate an application key:
+        `php artisan key:generate`
+5. Initialize the database
+    Create a new database in MySQL:
+    `CREATE DATABASE name_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`  
+    Run the migration and populate the database with data (if included):
+    php artisan migrate --seed
+6. Start the project
+    Start the integrated Laravel server:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+    > php artisan serve
+        
+    The project will be available at: http://localhost:8000
 
-## Laravel Sponsors
+### Demonstration of functionality
+A demonstration of the functionality through the frontend is available at the following link:
+[Youtube](https://www.youtube.com/watch?v=a_g-N6VQo98)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+### API Documentation
+Api documentation with demonstration of using different endpoint and example responses is available at the following link:
+[Postman](https://documenter.getpostman.com/view/39788307/2sAYkBsgmr)
 
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
