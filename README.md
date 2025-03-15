@@ -5,13 +5,23 @@ This project is backend for a vegetables market website. This website gives cust
 
 ### Features
 1. Attributes and Categories
-Categories that contain products can be added by customers. They have a tree structure. Based on them products can be sorted. Attributes show customer different product characteristics. Products can also be filtered with them.
+
+    Categories that contain products can be added by customers. They have a tree structure. Based on them products can be sorted. Attributes show customer different product characteristics. Products can also be filtered with them.
+
 2. Product orders
-Products can be ordered by the registered customer. Orders can be monitored and moderated by registered seller.
+   
+    Products can be ordered by the registered customer. Orders can be monitored and moderated by registered seller.
+
 3. Events
-Instead of the usual products, sellers can create events where customers can collect goods themselves. Customers can register for them.
+      
+   Instead of the usual products, sellers can create events where customers can collect goods themselves. Customers can register for them.
 4. Ratings
-Every registered customer can leave a rating with 1 - 5 star and comment for some product.
+
+    Every registered customer can leave a rating with 1 - 5 star and comment for some product.
+
+5. Administration 
+
+    Admin can add and remove moderators. Moderators can edit categories and attributes that products have, can approve new categories proposed by users.
 ### Database structure 
 ![ER Diagram](DB_scheme.png)
 To understand database design, an ER diagram was made. This diagram shows which tables exist and how they are related to each other.
@@ -25,16 +35,16 @@ Make sure you have the following software installed:
 - Web server: Apache, Nginx or integrated server Laravel
 - Archiving tool: for archive extraction
 - Recommendation: Use dev environment like [Laragon](https://laragon.org/)
-1. Unpacking the archive
+2. Unpacking the archive
     Download project archive and unpack it to the preferred folder e.g.: `/projects/iis-market-be (Laragon)`
-
-2. Installing dependencies
+&nbsp;
+3. Installing dependencies
     Open a terminal, navigate to the project folder and run:
-    > cd cesta/k/iis-market-be
-    > composer install   
+    `cd cesta/k/iis-market-be`
+    `composer install` 
 
     This will install all the necessary PHP packages.
-
+&nbsp;
 4. Configuring the environment
 Set environment variables:
 
@@ -50,15 +60,17 @@ Set environment variables:
         
     3. Generate an application key:
         `php artisan key:generate`
+&nbsp;
 5. Initialize the database
     Create a new database in MySQL:
     `CREATE DATABASE name_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`  
     Run the migration and populate the database with data (if included):
-    php artisan migrate --seed
+    `php artisan migrate --seed`
+&nbsp;
 6. Start the project
     Start the integrated Laravel server:
 
-    > php artisan serve
+    `php artisan serve`
         
     The project will be available at: http://localhost:8000
 
